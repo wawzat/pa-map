@@ -4,5 +4,7 @@ Save an image "frame" for data plotted every 15 minutes to be used to create a v
 
 combined_csv_map_plot.csv: sample data 
 pa_map_plot.py: create the image frames, optionally get a map image from mapbox with appropriate geographic bounds. 
+ 
 get_map.py: used by pa_map_plot.py to get map image from mapbox. 
+ 
 pa_map_vid.py: create h.264 mp4 video from image frames. 
