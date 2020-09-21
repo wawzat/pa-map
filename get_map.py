@@ -1,6 +1,7 @@
 # RA, 2019-01-16
 # Download a rendered map from Mapbox based on a bounding box
 # License: CC0 -- no rights reserved
+# Modified by James S. Lucas - 20200921
 
 import io
 import os
@@ -141,11 +142,10 @@ def get_map_by_bbox(bbox):
     return i
 
 
-def get_map(map_full_file_path):
-
+def get_map(map_full_file_path, bbox = [-117.5298-.004, 33.7180-.004, -117.4166+.004, 33.8188+.004]):
     # -117.529762, -117.416614, 33.718005, 33.818771000000005
     #bbox = [-117.5298, 33.7180, -117.4166, 33.8188]
-    bbox = [-117.52981-.004, 33.7180-.004, -117.4166+.004, 33.8188+.004]
+    #bbox = [-117.5298-.004, 33.7180-.004, -117.4166+.004, 33.8188+.004]
     map = get_map_by_bbox(bbox)
 
     import matplotlib as mpl
@@ -154,10 +154,8 @@ def get_map(map_full_file_path):
     import matplotlib.pyplot as plt
     plt.imshow(map, extent=mb2ax(*bbox))
     plt.axis('off')
-    #plt.box(on=None)
-    #plt.tight_layout(pad=0.01, h_pad=0.01, w_pad=0.01, rect=None)
     plt.savefig(map_full_file_path, bbox_inches='tight', pad_inches=0)
-    plt.show()
+    #plt.show()
 
 
 if __name__ == "__main__":
