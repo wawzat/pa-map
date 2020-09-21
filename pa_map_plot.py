@@ -1,11 +1,12 @@
 # Visualize PA data on a map
-#James S. Lucas 20200920
+#James S. Lucas 20200921
 
 from datetime import datetime, timedelta
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+import argparse
+from get_map import get_map
 
 #user_directory = r' '
 matrix5 = r'd:\Users\James\OneDrive\Documents\House\PurpleAir\pa_map_plot'
@@ -24,13 +25,29 @@ map_filename = 'map_dark.png'
 data_full_file_path = root_path + data_filename
 map_full_file_path = root_path + map_filename 
 
+
+def get_arguments():
+    parser = argparse.ArgumentParser(
+    description='plot PA-II readings on a map every 15 minutes for use in visualization.',
+    prog='pa_map_plot',
+    usage='%(prog)s [-m <map>]',
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    g=parser.add_argument_group(title='arguments',
+          description='''   -m, --map     optional.  get a map image from mapbox. ''')
+    g.add_argument('-m', '--map', action='store_true',
+                    dest='map',
+                    help=argparse.SUPPRESS)
+    args = parser.parse_args()
+    return(args)
+
+
 df = pd.read_csv(data_full_file_path)
 df['DateTime_US_Pacific'] = pd.to_datetime(df['DateTime_US_Pacific'])
 
 bbox = (df.Lon.min()-.004, df.Lon.max()+.004, df.Lat.min()-.004, df.Lat.max()+.004)
+bbox_mapbox = (bbox[0], bbox[2], bbox[1], bbox[3])
 #print(bbox)
-
-map_plt = plt.imread(map_full_file_path)
 
 
 def plot_map(root_path, df, map_plt, fig_num, start_time, bbox):
@@ -52,9 +69,18 @@ def plot_map(root_path, df, map_plt, fig_num, start_time, bbox):
 fig_num = 1
 first_datetime = min(df['DateTime_US_Pacific'])
 last_datetime = max(df['DateTime_US_Pacific'])
-
 start_time = first_datetime
 time_increment = timedelta(minutes = 15)
+
+args = get_arguments()
+
+if args.map:
+    get_map(map_full_file_path, bbox_mapbox)
+
+
+map_plt = plt.imread(map_full_file_path)
+
+
 while start_time <= last_datetime:
     end_time = start_time + time_increment
     df2 = df[(df['DateTime_US_Pacific'] >= start_time) & (df['DateTime_US_Pacific'] <= end_time)]
