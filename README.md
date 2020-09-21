@@ -1,5 +1,5 @@
 Read PurpleAir PA-II sensor data from a .csv file (refer to included sample csv file for format). 
-Plot the AQI readings on a map image file 
+Plot the AQI readings on a map image file.  
 Save an image "frame" for data plotted every 15 minutes to be used to create a visualization video. 
 
 combined_csv_map_plot.csv: sample data 
