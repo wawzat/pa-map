@@ -75,4 +75,4 @@ def generate_video(images_path, vid_full_file_path):
   
   
 # Calling the generate_video function 
-generate_video(images_path, vid_full_file_path) 
+generate_video(images_path = images_path, vid_full_file_path = vid_full_file_path) 
