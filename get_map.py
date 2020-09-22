@@ -1,5 +1,7 @@
 # RA, 2019-01-16
 # Download a rendered map from Mapbox based on a bounding box
+# adapted from code found in article:
+# https://medium.com/@busybus/rendered-maps-with-python-ffba4b34101c
 # License: CC0 -- no rights reserved
 # Modified by James S. Lucas - 20200921
 
