@@ -1,20 +1,16 @@
 #pa_map video maker
-#James S. Lucas 20200920
+#James S. Lucas 20201018
 
 import cv2
 import os
 import re
+import config
 
-#user_directory = r' '
-matrix5 = r'd:\Users\James\OneDrive\Documents\House\PurpleAir\pa_map_plot'
-servitor = r'c:\Users\Jim\OneDrive\Documents\House\PurpleAir\pa_map_plot'
-wsl_ubuntu_matrix5 = r'/mnt/d/Users/James/OneDrive/Documents/House/PurpleAir/pa_map_plot'
-wsl_ubuntu_servitor = r'/mnt/c/Users/Jim/OneDrive/Documents/House/PurpleAir/pa_map_plot'
 
-# Change this variable to point to the desired directory above. 
-data_directory = matrix5
+# Change this variable to point to the desired directory in config.py. 
+data_directory = config.matrix5
 
-root_path = data_directory + os.path.sep
+root_path = data_directory + os.path.sep +'pa_map_plot' + os.path.sep
 images_folder = 'images'
 images_path = root_path + images_folder + os.path.sep 
 vid_filename = 'pa_tv.mp4'
@@ -63,7 +59,7 @@ def generate_video(images_path, vid_full_file_path):
   
     #video = cv2.VideoWriter(vid_filename, 0, 15, (width, height))  
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video = cv2.VideoWriter(vid_full_file_path, fourcc, 30, (width, height))  
+    video = cv2.VideoWriter(vid_full_file_path, fourcc, 10, (width, height))  
 
     # Appending the images to the video one by one 
     for image in images:  
@@ -73,6 +69,6 @@ def generate_video(images_path, vid_full_file_path):
     cv2.destroyAllWindows()  
     video.release()  # releasing the video generated 
   
-  
-# Calling the generate_video function 
-generate_video(images_path = images_path, vid_full_file_path = vid_full_file_path) 
+if __name__ == "__main__":
+    # Calling the generate_video function 
+    generate_video(images_path = images_path, vid_full_file_path = vid_full_file_path) 

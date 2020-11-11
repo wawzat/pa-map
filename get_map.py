@@ -3,29 +3,24 @@
 # adapted from code found in article:
 # https://medium.com/@busybus/rendered-maps-with-python-ffba4b34101c
 # License: CC0 -- no rights reserved
-# Modified by James S. Lucas - 20200921
+# Modified by James S. Lucas - 20201103
 
 import io
 import os
 import urllib.request
 from PIL import Image
 from math import pi, log, tan, exp, atan, log2, floor
+import config
 
 
-#user_directory = r' '
-matrix5 = r'd:\Users\James\OneDrive\Documents\House\PurpleAir\pa_map_plot'
-servitor = r'c:\Users\Jim\OneDrive\Documents\House\PurpleAir\pa_map_plot'
-wsl_ubuntu_matrix5 = r'/mnt/d/Users/James/OneDrive/Documents/House/PurpleAir/pa_map_plot'
-wsl_ubuntu_servitor = r'/mnt/c/Users/Jim/OneDrive/Documents/House/PurpleAir/pa_map_plot'
-
-# Change this variable to point to the desired directory above. 
-data_directory = matrix5
+# Change this variable to point to the desired directory in config.py. 
+data_directory = config.matrix5
 
 root_path = data_directory + os.path.sep
 
 map_filename = 'map_dark.png'
 
-map_full_file_path = root_path + map_filename 
+map_full_file_path = root_path + os.path.sep + 'pa_map_plot' + os.path.sep + map_filename 
 
 
 # Convert geographical coordinates to pixels
