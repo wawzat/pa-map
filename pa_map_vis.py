@@ -25,7 +25,7 @@ data_filename = 'bay_area_20201026_20201027.csv'
 map_filename = 'map_dark.png'
 
 data_full_file_path = root_path + 'pa_map_plot' + os.path.sep + data_filename
-map_full_file_path = root_path + 'pa_map_plot' + map_filename 
+map_full_file_path = root_path + 'pa_map_plot' + os.path.sep + map_filename 
 
 images_folder = 'images'
 images_path = root_path + 'pa_map_plot' + os.path.sep + images_folder + os.path.sep 

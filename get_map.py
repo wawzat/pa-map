@@ -67,7 +67,7 @@ def mb2ax(left, bottom, right, top):
 # bbox = (left, bottom, right, top) in degrees
 def get_map_by_bbox(bbox):
     # Token from https://www.mapbox.com/api-documentation/maps/#static
-    token = "pk.eyJ1IjoiYnVzeWJ1cyIsImEiOiJjanF4cXNoNmEwOG1yNDNycGw5bTByc3g5In0.flzpO633oGAY5aa-RQa4Ow"
+    token = config.access_token
 
     # The region of interest in geo-coordinates in degrees
     # For example, bbox = [120.2206, 22.4827, 120.4308, 22.7578]
@@ -78,7 +78,7 @@ def get_map_by_bbox(bbox):
     assert (-180 <= left < right <= 180)
 
     # Rendered image map size in pixels as it should come from MapBox (no retina)
-    (w, h) = (1024, 1024)
+    (w, h) = (1280, 1280)
 
     # The center point of the region of interest
     (lat, lon) = ((top + bottom) / 2, (left + right) / 2)
@@ -107,7 +107,9 @@ def get_map_by_bbox(bbox):
 
     # Collect all parameters
     params = {
-        'style': "dark-v10",
+        #'style': "dark-v10",
+        #'style': "mapbox://styles/wawzat/ckhe5u8c101kx19pez36w8lia",
+        'style': "ckhe5u8c101kx19pez36w8lia",
         'lat': lat,
         'lon': lon,
         'token': token,
@@ -117,8 +119,10 @@ def get_map_by_bbox(bbox):
         'retina': "@2x",
     }
 
-    url_template = "https://api.mapbox.com/styles/v1/mapbox/{style}/static/{lon},{lat},{zoom}/{w}x{h}{retina}?access_token={token}&attribution=false&logo=false"
+    #url_template = "https://api.mapbox.com/styles/v1/mapbox/{style}/static/{lon},{lat},{zoom}/{w}x{h}{retina}?access_token={token}&attribution=false&logo=false"
+    url_template = "https://api.mapbox.com/styles/v1/wawzat/{style}/static/{lon},{lat},{zoom}/{w}x{h}{retina}?access_token={token}&attribution=false&logo=false"
     url = url_template.format(**params)
+    #print(url)
 
     # Download the rendered image
     with urllib.request.urlopen(url) as response:
@@ -126,6 +130,7 @@ def get_map_by_bbox(bbox):
 
     # If the "retina" @2x parameter is used, the image is twice the size of the requested dimensions
     (W, H) = j.size
+    #print(j.size)
     assert ((W, H) in [(w, h), (2 * w, 2 * h)])
 
     # Extract the region of interest from the larger covering map
@@ -142,6 +147,7 @@ def get_map_by_bbox(bbox):
 def get_map(map_full_file_path, bbox = [-117.5298-.004, 33.7180-.004, -117.4166+.004, 33.8188+.004]):
     #bbox = [-117.5298-.004, 33.7180-.004, -117.4166+.004, 33.8188+.004]
     map = get_map_by_bbox(bbox)
+    map.save(map_full_file_path)
 
     import matplotlib as mpl
     mpl.use("TkAgg")
@@ -149,7 +155,7 @@ def get_map(map_full_file_path, bbox = [-117.5298-.004, 33.7180-.004, -117.4166+
     import matplotlib.pyplot as plt
     plt.imshow(map, extent=mb2ax(*bbox))
     plt.axis('off')
-    plt.savefig(map_full_file_path, bbox_inches='tight', pad_inches=0)
+    #plt.savefig(map_full_file_path, bbox_inches='tight', pad_inches=0)
     #plt.show()
 
 
