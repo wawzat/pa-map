@@ -25,7 +25,6 @@ data_directory = config.matrix5
 filename = 'bay_area_20201026_20201027.csv'
 output_folder = 'pa_map_plot'
 output_path = data_directory + os.path.sep + output_folder
-output_pathname = output_path + os.path.sep + filename
 
 
 def get_sensor_indexes(bbox):
@@ -41,7 +40,7 @@ def get_sensor_indexes(bbox):
    url = url_template.format(**params)
    try:
       list_of_sensor_indexes = []
-      header = {"X-API-Key":config.READ_KEY}
+      header = {"X-API-Key":config.purpleair_read_key}
       response = requests.get(url, headers=header)
       if response.status_code == 200:
          sensors_data = json.loads(response.text)
@@ -60,7 +59,7 @@ def get_sensor_indexes(bbox):
 def get_sensor_ids(list_of_sensor_indexes):
    sensor_ids = []
    root_url = "https://api.purpleair.com/v1/sensors/{sensor_index}"
-   header = {"X-API-Key":config.READ_KEY}
+   header = {"X-API-Key":config.purpleair_read_key}
    for sensor_index in list_of_sensor_indexes:
       params = {'sensor_index': sensor_index}
       url = root_url.format(**params)
@@ -205,5 +204,4 @@ def pa_get_df(start_time, end_time, bbox):
    list_of_sensor_indexes = get_sensor_indexes(bbox)
    sensor_ids = get_sensor_ids(list_of_sensor_indexes)
    df = get_ts_data(sensor_ids, start_time, end_time)
-   df.to_csv(output_pathname, index=False, header=True)
    return df

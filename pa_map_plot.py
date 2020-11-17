@@ -8,7 +8,6 @@ import pandas as pd
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-#from matplotlib.colors import ListedColormap
 import colorcet as cc
 import os
 import config
@@ -20,7 +19,7 @@ def cleanup_files(images_path):
         os.remove(os.path.join(images_path, f))
 
 
-def plot_map(root_path, df, map_plt, fig_num, start_time, bbox):
+def plot_map(root_path, df, map_plt, fig_num, start_time, bbox, label, range):
     dpi = 96
     mapsize = map_plt.shape
     images_path = root_path + 'pa_map_plot' + os.path.sep + 'images' + os.path.sep
@@ -28,11 +27,12 @@ def plot_map(root_path, df, map_plt, fig_num, start_time, bbox):
     #fig, ax = plt.subplots(figsize = (891/dpi, 1174/dpi))
     fig, ax = plt.subplots(figsize = (mapsize[1]/dpi, mapsize[0]/dpi))
     ax.set_axis_off()
-    ax.scatter(df.Lon, df.Lat, zorder=1, alpha=0.8, c=df.Ipm25, s=18, cmap=cc.cm.fire, vmin=20, vmax=255)
+    ax.scatter(df.Lon, df.Lat, zorder=1, alpha=0.8, c=df.Ipm25, s=18, cmap=cc.cm.fire, vmin=range[0], vmax=range[1])
+    #ax.scatter(df.Lon, df.Lat, zorder=1, alpha=0.8, c=df.Ipm25, s=18, cmap=cc.cm.fire, vmin=20, vmax=255)
     #ax.scatter(df.Lon, df.Lat, zorder=1, alpha=0.6, c=df.Ipm25, s=18, cmap=plt.get_cmap('YlOrRd'), vmin=40, vmax=235)
     #ax.scatter(df.Lon, df.Lat, zorder=1, alpha=0.5, c=df.Ipm25, s=5, cmap=plt.get_cmap('magma'), vmin=0, vmax=275)
     #ax.scatter(df.Lon, df.Lat, zorder=1, alpha=0.6, c=df.Ipm25, s=20, cmap=cmap, vmin=10, vmax=245)
-    ax.set_title('Fairfield Fire Air Quality Index')
+    ax.set_title(label)
     ax.text(0.1, 0.1, str(start_time), transform=ax.transAxes, color='w')
     ax.set_xlim(bbox[0],bbox[1])
     ax.set_ylim(bbox[2],bbox[3])

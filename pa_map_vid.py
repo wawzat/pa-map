@@ -71,4 +71,4 @@ def generate_video(images_path, vid_full_file_path):
   
 if __name__ == "__main__":
     # Calling the generate_video function 
-    generate_video(images_path = images_path, vid_full_file_path = vid_full_file_path) 
+    generate_video(images_path=images_path, vid_full_file_path=vid_full_file_path) 

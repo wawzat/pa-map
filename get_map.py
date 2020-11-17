@@ -67,7 +67,7 @@ def mb2ax(left, bottom, right, top):
 # bbox = (left, bottom, right, top) in degrees
 def get_map_by_bbox(bbox):
     # Token from https://www.mapbox.com/api-documentation/maps/#static
-    token = config.access_token
+    token = config.mapbox_access_token
 
     # The region of interest in geo-coordinates in degrees
     # For example, bbox = [120.2206, 22.4827, 120.4308, 22.7578]
