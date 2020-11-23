@@ -50,12 +50,14 @@ def get_arguments():
     parser = argparse.ArgumentParser(
     description='generate time-lapse video of PA-II readings on a map.',
     prog='pa_map_plot',
-    usage='%(prog)s [-d <data>], [-b <bbox>], [-v <video>], [-f <frames>], [-l <label>], [-o <output>], [-s <start>], [-e <end>]',
+    usage='%(prog)s [-d <data>], [-b <bbox>], [-r <ramge>] [-v <video>], [-f <frames>], [-l <label>], [-o <output>], [-s <start>], [-e <end>]',
     formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     g=parser.add_argument_group(title='arguments',
           description='''    -d, --data    optional.  get data from either csv or ThingSpeak.
     -b  --bbox                            optional.  bounding box.
+    -r  --range                           optional.  min max color range of readings.
+    -m  --marker                          optional.  size of sensor icon.
     -v  --video                           optional.  generate video. 
     -f  --frames                          optional.  prepare video frames.
     -l  --label                           optional.  label for the video.
@@ -80,7 +82,11 @@ def get_arguments():
                     default = [20, 225],
                     dest='range',
                     help=argparse.SUPPRESS)
-
+    g.add_argument('-m', '--marker',
+                    type=int,
+                    default = 18,
+                    dest='marker',
+                    help=argparse.SUPPRESS)
     g.add_argument('-v', '--video', action='store_true',
                     dest='video',
                     help=argparse.SUPPRESS)
@@ -174,7 +180,7 @@ if args.frames:
     while start_time <= last_datetime:
         end_time = start_time + time_increment
         df2 = df[(df['created_at'] >= start_time) & (df['created_at'] <= end_time)]
-        fig_num = plot_map(root_path, df2, map_plt, fig_num, start_time, bbox_plot, args.label, args.range)
+        fig_num = plot_map(root_path, df2, map_plt, fig_num, start_time, bbox_plot, args.label, args.range, args.marker)
         start_time = end_time
 if args.video:
     generate_video(images_path, vid_full_file_path)

@@ -47,6 +47,8 @@ def get_sensor_indexes(bbox):
          for sensor_list in sensors_data['data']:
             list_of_sensor_indexes.append(sensor_list[0])
          print(" ")
+         print(len(list_of_sensor_indexes))
+         print(" ")
          print (list_of_sensor_indexes)
          print(" ")
          return list_of_sensor_indexes
