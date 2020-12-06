@@ -24,4 +24,4 @@ Some of the modules may also be used independently as modules in other programs 
 1. There are two data modes that may be selected with the -d argument. 
   1. -d TS obtains historical data from ThinkSpeak. Historical data are saved in the Data folder as csv files.
   2. -d CSV provides a list the of csv files that exist in the Data folder to choose from. The intent here is if you want to adjust to a shorter date range, or modify some of the plotting/video parameters you can re-create the time lapse without re-downloading the historical data.
-4. sleep() functions are used to rate limit. Durations have not been rigorously tested and there is room for improvement.
+4. sleep() functions are used to rate limit the PurpleAir and ThingSpeak requests. Durations have not been rigorously tested and there is room for improvement.
