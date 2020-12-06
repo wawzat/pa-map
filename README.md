@@ -14,7 +14,7 @@ Some of the modules may also be used independently as modules in other programs 
 
 ## Installation and Use
 1. Request a key for the PurpleAir REST API from contact@purpleair.com.
-2. Register an account with https://www/mapbox.com.
+2. Register an account with https://www.mapbox.com.
 3. Create a root folder path and subfolders for images, data and video.
 4. Rename the config_template.py file to config.py.
 5. Edit config.py with the PurpleAir keys, Mapbox tokens and file directory paths.
