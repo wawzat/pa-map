@@ -1,6 +1,6 @@
 # Visualize PA data on a map
 #  *** WARNING! *** this program deletes files from a temporary images folder. This is not safed off yet. Use at your own risk.
-# James S. Lucas 20201028
+# James S. Lucas 20201206
 
 from datetime import date, datetime, timedelta
 import pandas as pd
@@ -9,13 +9,26 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import colorcet as cc
 import os
+import sys
 import config
 
 
 def cleanup_files(images_path):
     filelist = [ f for f in os.listdir(images_path) if f.endswith(".png") ]
-    for f in filelist:
-        os.remove(os.path.join(images_path, f))
+    if len(filelist) > 0:
+        while True:
+            print(" ")
+            choice = input("Warning! All files will be deleted from %s. Proceed (y/n)? " % images_path)
+            if choice == "y" or choice == "n":
+                if choice == "y":
+                    for f in filelist:
+                        os.remove(os.path.join(images_path, f))
+                    break
+                elif choice == "n":
+                    print("exiting.")
+                    sys.exit()
+            else:
+                print("please enter y or n: ")
 
 
 def plot_map(root_path, df, map_plt, fig_num, start_time, bbox, label, range, marker):
