@@ -1,33 +1,53 @@
-# Get PurpleAir sensor data from PurpleAir and Thingspeak API's for bounding box and year-month
-# Returns pandas dataframe
-# James S. Lucas 20201018
-# Todo:  prepare as func0ion accepting input for bbox and date range
-#        convert sensor_ids tuple to dictionary
-#        rename variables consistently with names that are more appropriate to function
-#        allow partial month date range
-#        exception handling
-#        directories and paths from config file vs hardcoded. Prompt for path on first run.
-#        add option to store data in local time vs UTC
+'''Get PurpleAir sensor data from PurpleAir and Thingspeak API's for bounding box and date range. Add
+   calculated AI to the data.
+ 
+Args:
+   start_time: (str)
+      date and time of first measurement in the format "YYYY-MM-DD H:M:S"
+   end_time: (str) 
+      date and time of last measurement in the format "YYYY_MM_DD H:M:S"
+   bbox: float (4)
+      bounding box coordinates in the format lat1 lon1 lat2 lon2 for the SE and NW corners respectively
+   interval: (str)
+      The average data interval in minutes. minimum is two minutes
+
+Returns:
+   Pandas Data frame of sensor readings for sensors within the bounding box during the provided start and end times.
+
+Notes:
+   Description of operation:
+      PurpleAir API is queried for a list of sensors within the bounding box.
+      PurpleAir API is queried a second time for the Thingspeak keys for each of the sensors
+      Thingspeak API is queried for the sensor historical readings.
+
+   Todo: 
+      rename variables consistently with names that are more appropriate to function
+      exception handling
+      add option to store data in local time vs UTC
+      filter apparent bad sensor readings 
+      Get both sensors data and exclude based on confidence
+'''
+ 
+ #James S. Lucas 20201206
 
 import requests
 import json
-import os
 import config
 import pandas as pd
-#import calendar
-from datetime import datetime
 from time import sleep
-
-
-# Change this variable in config.py to point to the desired directory above. 
-data_directory = config.matrix5
-
-filename = 'bay_area_20201026_20201027.csv'
-output_folder = 'pa_map_plot'
-output_path = data_directory + os.path.sep + output_folder
+import math
 
 
 def get_sensor_indexes(bbox):
+   '''Gets list of sensor indexes (aka ID's) from the PurpleAir API for sensors located within a bounding box.
+
+      Args:
+         bbox (list, float)
+            bounding box coordinates in the format lat1 lon1 lat2 lon2 for the SE and NW corners respectively
+
+      Returns:
+         (List, str)
+   '''
    root_url = "https://api.purpleair.com/v1/sensors"
    params = {
       'fields': "name,latitude,longitude",
@@ -59,6 +79,23 @@ def get_sensor_indexes(bbox):
 
 
 def get_sensor_ids(list_of_sensor_indexes):
+   '''Gets list of lists of sensor metadata from the PurpleAir API
+
+      Args:
+         list_of_sensor_indexes: (list, str)
+
+      Returns:
+         list of lists of sensor metadata.
+
+      Notes:
+         Metadata includes:
+            sensor name
+            latitude
+            longitude
+            sensor index
+            Thingspeak primiary id a
+            Thingspeak primary key a
+   '''
    sensor_ids = []
    root_url = "https://api.purpleair.com/v1/sensors/{sensor_index}"
    header = {"X-API-Key":config.purpleair_read_key}
@@ -76,11 +113,22 @@ def get_sensor_ids(list_of_sensor_indexes):
          sensor_data['sensor']['primary_key_a']
          ))
       print(sensor_index)
-      sleep(1.5)
+      sleep(1.7)
    return sensor_ids
 
 
 def date_range(start_time, end_time, intv):
+   '''Used to break up the overall date range into a list of start and end times to stay within the imposed limit of the
+      number of records in each Thingspeak request.
+
+      Args:
+         start_time: (datetime)
+         end_time: (datetime)
+         intv: (int)
+      
+      Yields:
+         (datetime)
+   '''
    diff = (end_time  - start_time ) / intv
    for i in range(intv):
       yield (start_time + diff * i).strftime("%Y%m%d")
@@ -88,14 +136,26 @@ def date_range(start_time, end_time, intv):
 
 
 def calc_aqi(PM2_5):
-    # Function takes the 24-hour rolling average PM2.5 value and calculates
-    # "AQI". "AQI" in quotes as this is not an official methodology. AQI is 
-    # 24 hour midnight-midnight average. May change to NowCast or other
-    # methodology in the future.
+   '''Calculates AQI value from provided raw particle density value.
+
+      Args:
+         PM2_5: (float)
+            Raw particle density measurement
+      
+      Returns:
+         Calculated AQI value: (int)
+      
+      Notes:
+         Function takes the 24-hour rolling average PM2.5 value and calculates
+         "AQI". "AQI" in quotes as this is not an official methodology. AQI is 
+         24 hour midnight-midnight average. May change to NowCast or other
+         methodology in the future.
+   '''
    # Truncate to one decimal place.
-   PM2_5 = int(PM2_5 * 10) / 10.0
-   if PM2_5 < 0:
+   # There shouldn't be any NaN values as they have been filtered out but just in case.
+   if (PM2_5 < 0) or math.isnan(PM2_5):
       PM2_5 = 0
+   PM2_5 = int(PM2_5 * 10) / 10.0
    #AQI breakpoints [0,    1,     2,    3    ]
    #                [Ilow, Ihigh, Clow, Chigh]
    pm25_aqi = {
@@ -138,14 +198,28 @@ def calc_aqi(PM2_5):
       print("error in calc_aqi() function: %s") % e
  
 
-def get_ts_data(sensor_ids, start_time, end_time):
+def get_ts_data(sensor_ids, start_time, end_time, interval):
+   '''Gets sensor readings from the Thingspeak API.
+
+      Args:
+         sensor_ids: (list, str)
+         start_time: (datetime)
+         end_time: (datetime)
+         interval: (int)
+
+      Returns:
+         (Pandas dataframe)
+   '''
    df = None
    delta = end_time - start_time
    intv = int(delta.days / 10)
    if intv < 1:
       intv = 1
    data_range = list(date_range(start_time, end_time, intv)) 
+   i = 0
+   num_sensors = len(sensor_ids)
    for sensor in sensor_ids:
+      i += 1
       sensor_name = sensor[0]
       lat = sensor[1]
       lon = sensor[2]
@@ -160,10 +234,10 @@ def get_ts_data(sensor_ids, start_time, end_time):
             'api_key': api_key,
             'start': start_time,
             'end': end_time,
-            'average': '10'
+            'average': interval
             }
          url = root_url.format(**params)
-         print(url)
+         print(str(i) + " of " + str(num_sensors) + " " + url)
          if df is None:
             df = pd.read_csv(url)
             df.insert(0, 'Sensor', sensor_name)
@@ -175,6 +249,7 @@ def get_ts_data(sensor_ids, start_time, end_time):
             df_s.insert(0, 'Lat', lat)
             df_s.insert(0, 'Lon', lon)
             df = pd.concat([df, df_s])
+         sleep(.3)
    mapping = {
       'created_at': 'created_at',
       'entry_id': 'entry_id',
@@ -189,9 +264,9 @@ def get_ts_data(sensor_ids, start_time, end_time):
       }
    df = df.rename(columns=mapping)
    df['created_at'] = pd.to_datetime(df['created_at'])
+   df = df[df['PM2.5_CF1_ug/m3'].notnull()]
 
    # Calculate AQI
-   # For clarity may move most of this to calc_aqi()
    df_AQI = df[['created_at', 'PM2.5_CF1_ug/m3']].copy()
    df_AQI['created_at'] = pd.to_datetime(df_AQI['created_at'])
    df_AQI['Ipm25'] = df_AQI.apply(
@@ -199,11 +274,88 @@ def get_ts_data(sensor_ids, start_time, end_time):
          axis=1
          )
    df['Ipm25'] = df_AQI['Ipm25']
+   df = df[df['Ipm25'] <= 800]
    return df
 
 
-def pa_get_df(start_time, end_time, bbox):
+def pa_get_df(start_time, end_time, bbox, interval):
+   '''Main entry point. Executes the various functions.
+      
+      Args:
+         start_time: (datetime)
+         end_time: (datetime)
+         bbox: (list, float)
+         intv: (int)
+      
+      Returns:
+         (Pandas dataframe)
+   '''
    list_of_sensor_indexes = get_sensor_indexes(bbox)
    sensor_ids = get_sensor_ids(list_of_sensor_indexes)
-   df = get_ts_data(sensor_ids, start_time, end_time)
+   df = get_ts_data(sensor_ids, start_time, end_time, interval)
    return df
+
+
+if __name__ == "__main__":
+   import argparse
+   from datetime import datetime
+   import os
+   import config
+
+   root_path = config.root_path + os.path.sep
+   data_path = root_path + config.data_folder
+
+
+   def valid_date(s):
+      try:
+         return datetime.strptime(s, "%Y-%m-%d %H:%M:%S")
+      except ValueError:
+         msg = "Not a valid date: '{0}'.".format(s)
+         raise argparse.ArgumentTypeError(msg)
+
+
+   def get_arguments():
+      parser = argparse.ArgumentParser(
+      description='get PurpleAir PA-II sensor data from Thingspeak.',
+      prog='pa_get_df',
+      usage='%(prog)s [-b <bbox>], [-o <output>], [-i <interval>], [-s <start>], [-e <end>]',
+      formatter_class=argparse.RawDescriptionHelpFormatter,
+      )
+      g=parser.add_argument_group(title='arguments',
+            description='''    -b, --bbox    optional.  bounding box coordinates, format  SE lon lat NW lon lat. omit SE and NW.
+      -o  --output                          optional.  output filename prefix.
+      -i  --interval                        optional.  data average interval. minutes.
+      -s  --start                           optional.  start date. format "YYYY-MM-DD HH:MM:SS" include quotes. 
+      -e  --end                             optional.  end date. format "YYYY-MM-DD HH:MM:SS" include quotes.           ''')
+      g.add_argument('-b', '--bbox',
+                     type=float,
+                     nargs = 4,
+                     default = [-117.5298, 33.7180, -117.4166, 33.8188],
+                     dest='bbox',
+                     help=argparse.SUPPRESS)
+      g.add_argument('-f', '--filename',
+                     type=str,
+                     default = 'no_name',
+                     dest='filename',
+                     help=argparse.SUPPRESS)
+      g.add_argument('-i', '--interval',
+                     type=str,
+                     default = '10',
+                     dest='interval',
+                     help=argparse.SUPPRESS)
+      g.add_argument('-s', '--startdate', 
+                     type=valid_date,
+                     help=argparse.SUPPRESS)
+      g.add_argument('-e', '--enddate', 
+                     type=valid_date,
+                     help=argparse.SUPPRESS)
+      args = parser.parse_args()
+      return(args)
+
+   args = get_arguments()
+
+   bbox = args.bbox
+   bbox_pa = (str(bbox[0]), str(bbox[1]), str(bbox[2]), str(bbox[3]))
+   df = pa_get_df(args.startdate, args.enddate, bbox_pa, args.interval)
+   data_file_full_path = data_path + os.path.sep + args.filename + "_" + args.startdate.strftime("%Y%m%d") + "_" + args.enddate.strftime("%Y%m%d") + ".csv"
+   df.to_csv(data_file_full_path, index=False, header=True)

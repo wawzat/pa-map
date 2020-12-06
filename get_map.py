@@ -2,25 +2,24 @@
 # Download a rendered map from Mapbox based on a bounding box
 # adapted from code found in article:
 # https://medium.com/@busybus/rendered-maps-with-python-ffba4b34101c
+# tip: for bounding box coordinates go to http://bboxfinder.com draw a rectangle and copy box coordinates.
+#       paste the coordinates after the command line -b argument, delete the commas and insert spaces instead.
 # License: CC0 -- no rights reserved
-# Modified by James S. Lucas - 20201103
+# Modified by James S. Lucas - 20201124
 
 import io
 import os
+import argparse
 import urllib.request
 from PIL import Image
 from math import pi, log, tan, exp, atan, log2, floor
 import config
 
 
-# Change this variable to point to the desired directory in config.py. 
-data_directory = config.matrix5
-
-root_path = data_directory + os.path.sep
+root_path = config.root_path + os.path.sep
 
 map_filename = 'map_dark.png'
-
-map_full_file_path = root_path + os.path.sep + 'pa_map_plot' + os.path.sep + map_filename 
+map_full_file_path = root_path + map_filename 
 
 
 # Convert geographical coordinates to pixels
@@ -122,7 +121,6 @@ def get_map_by_bbox(bbox):
     #url_template = "https://api.mapbox.com/styles/v1/mapbox/{style}/static/{lon},{lat},{zoom}/{w}x{h}{retina}?access_token={token}&attribution=false&logo=false"
     url_template = "https://api.mapbox.com/styles/v1/wawzat/{style}/static/{lon},{lat},{zoom}/{w}x{h}{retina}?access_token={token}&attribution=false&logo=false"
     url = url_template.format(**params)
-    #print(url)
 
     # Download the rendered image
     with urllib.request.urlopen(url) as response:
@@ -160,4 +158,37 @@ def get_map(map_full_file_path, bbox = [-117.5298-.004, 33.7180-.004, -117.4166+
 
 
 if __name__ == "__main__":
-    get_map(map_full_file_path)
+    root_path = config.root_path
+
+    def get_arguments():
+        parser = argparse.ArgumentParser(
+        description='get map from Mapbox for provided bounding box.',
+        prog='get_map',
+        usage='%(prog)s [-b <bbox>], [-f <filename>]',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
+        g=parser.add_argument_group(title='arguments',
+            description='''        -b, --bbox       required.  bounding box coordinates, format  SE lon lat NW lon lat. omit SE and NW.
+        -f  --filename   optional.  output filename prefix.                                          ''')
+        g.add_argument('-b', '--bbox',
+                        type=float,
+                        nargs = 4,
+                        default = [-117.5298, 33.7180, -117.4166, 33.8188],
+                        dest='bbox',
+                        help=argparse.SUPPRESS)
+        g.add_argument('-f', '--filename',
+                        type=str,
+                        default = 'map_dark.png',
+                        dest='filename',
+                        help=argparse.SUPPRESS)
+        args = parser.parse_args()
+        return(args)
+
+
+    args = get_arguments()
+    root_path = config.root_path + os.path.sep
+
+    map_filename = args.filename + '.png'
+    map_full_file_path = root_path + map_filename 
+
+    get_map(map_full_file_path, args.bbox)

@@ -1,21 +1,9 @@
 #pa_map video maker
-#James S. Lucas 20201018
+#James S. Lucas 20201023
 
 import cv2
 import os
 import re
-import config
-
-
-# Change this variable to point to the desired directory in config.py. 
-data_directory = config.matrix5
-
-root_path = data_directory + os.path.sep +'pa_map_plot' + os.path.sep
-images_folder = 'images'
-images_path = root_path + images_folder + os.path.sep 
-vid_filename = 'pa_tv.mp4'
-vid_full_file_path = root_path + vid_filename 
-
 
 def tryint(s):
     try:
@@ -37,7 +25,7 @@ def sort_nicely(l):
 
 
 # Video Generating function 
-def generate_video(images_path, vid_full_file_path): 
+def generate_video(images_path, vid_full_file_path, frames): 
     os.chdir(images_path) 
       
     images = [img for img in os.listdir(images_path) 
@@ -48,7 +36,6 @@ def generate_video(images_path, vid_full_file_path):
 
     # Array images should only consider 
     # the image files ignoring others if any 
-    #print(images)  
   
     frame = cv2.imread(os.path.join(images_path, images[0])) 
   
@@ -57,9 +44,8 @@ def generate_video(images_path, vid_full_file_path):
     height, width, layers = frame.shape   
   
   
-    #video = cv2.VideoWriter(vid_filename, 0, 15, (width, height))  
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video = cv2.VideoWriter(vid_full_file_path, fourcc, 10, (width, height))  
+    video = cv2.VideoWriter(vid_full_file_path, fourcc, frames, (width, height))  
 
     # Appending the images to the video one by one 
     for image in images:  
@@ -70,5 +56,49 @@ def generate_video(images_path, vid_full_file_path):
     video.release()  # releasing the video generated 
   
 if __name__ == "__main__":
+    import argparse
+    import config
+    import glob
+    import sys
+
     # Calling the generate_video function 
-    generate_video(images_path=images_path, vid_full_file_path=vid_full_file_path) 
+    def get_arguments():
+        parser = argparse.ArgumentParser(
+        description='generate time-lapse video from image files.',
+        prog='pa_map_vid',
+        usage='%(prog)s [-o <filename>], [-f <frames per second>]',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
+        g=parser.add_argument_group(title='arguments',
+            description='''    -o, --output    optional.  filename prefix for the video.   
+        -f  --frames                          optional.  frames per second.
+
+             ''')
+        g.add_argument('-o', '--output',
+                        type=str,
+                        default = 'no_name',
+                        dest='filename',
+                        help=argparse.SUPPRESS)
+        g.add_argument('-f', '--frames',
+                        type=int,
+                        default = 15,
+                        dest='frames',
+                        help=argparse.SUPPRESS)
+        args = parser.parse_args()
+        return(args)
+
+
+    args = get_arguments()
+
+    filename = args.output + '.mp4'
+
+    images_path = config.root_path + os.path.sep + config.images_folder
+    vid_full_file_path = config.root_path + os.path.sep + config.video_folder + os.path.sep + filename
+
+    files = glob.glob(images_path + os.path.sep + '*.png')
+
+    if not files:
+        print("error. no image files found.")
+    else:
+        generate_video(images_path, vid_full_file_path, args.frames) 
+        sys.exit()

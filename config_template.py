@@ -9,6 +9,10 @@ purpleair_write_key = '<WRITE KEY>'
 purpleair_access_token = '<ACCESS TOKEN>'
 purpleair_private_token = '<PRIVATE TOKEN>'
 
-
 #user_directory = r' '
-matrix5 = r'd:\Users\wawzat\OneDrive\Documents\House\PurpleAir'
+root_path = r'd:\Users\wawzat\OneDrive\Documents\House\PurpleAir\pa_map_plot' #MATRIX5
+#root_path = r'c:\Users\wawzat\OneDrive\Documents\House\PurpleAir'            #servitor
+
+video_folder = 'videos'
+images_folder = 'images'
+data_folder = 'Data'
