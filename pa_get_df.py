@@ -1,4 +1,4 @@
-'''Get PurpleAir sensor data from PurpleAir and Thingspeak API's for bounding box and date range. Add
+'''Get PurpleAir sensor data from PurpleAir and ThingSpeak API's for bounding box and date range. Add
    calculated AI to the data.
  
 Args:
@@ -17,8 +17,8 @@ Returns:
 Notes:
    Description of operation:
       PurpleAir API is queried for a list of sensors within the bounding box.
-      PurpleAir API is queried a second time for the Thingspeak keys for each of the sensors
-      Thingspeak API is queried for the sensor historical readings.
+      PurpleAir API is queried a second time for the ThingSpeak keys for each of the sensors
+      ThingSpeak API is queried for the sensor historical readings.
 
    Todo: 
       rename variables consistently with names that are more appropriate to function
@@ -93,8 +93,8 @@ def get_sensor_ids(list_of_sensor_indexes):
             latitude
             longitude
             sensor index
-            Thingspeak primiary id a
-            Thingspeak primary key a
+            ThingSpeak primiary id a
+            ThingSpeak primary key a
    '''
    sensor_ids = []
    root_url = "https://api.purpleair.com/v1/sensors/{sensor_index}"
@@ -119,7 +119,7 @@ def get_sensor_ids(list_of_sensor_indexes):
 
 def date_range(start_time, end_time, intv):
    '''Used to break up the overall date range into a list of start and end times to stay within the imposed limit of the
-      number of records in each Thingspeak request.
+      number of records in each ThingSpeak request.
 
       Args:
          start_time: (datetime)
@@ -199,7 +199,7 @@ def calc_aqi(PM2_5):
  
 
 def get_ts_data(sensor_ids, start_time, end_time, interval):
-   '''Gets sensor readings from the Thingspeak API.
+   '''Gets sensor readings from the ThingSpeak API.
 
       Args:
          sensor_ids: (list, str)
@@ -316,7 +316,7 @@ if __name__ == "__main__":
 
    def get_arguments():
       parser = argparse.ArgumentParser(
-      description='get PurpleAir PA-II sensor data from Thingspeak.',
+      description='get PurpleAir PA-II sensor data from ThingSpeak.',
       prog='pa_get_df',
       usage='%(prog)s [-b <bbox>], [-o <output>], [-i <interval>], [-s <start>], [-e <end>]',
       formatter_class=argparse.RawDescriptionHelpFormatter,
