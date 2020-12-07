@@ -118,7 +118,7 @@ def get_sensor_ids(list_of_sensor_indexes):
 
 
 def date_range(start_time, end_time, intv):
-   '''Used to break up the overall date range into a list of start and end times to stay within the imposed limit of the
+   '''Used to break up the overall date range into a list of start and end times to comply the imposed limit of the
       number of records in each ThingSpeak request.
 
       Args:
