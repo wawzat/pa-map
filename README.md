@@ -28,7 +28,6 @@ Some of the modules may also be used independently as modules in other programs 
 
 ## Required Python Libraries
 - PIL
-- json
 - pandas
 - numpy
 - matplotlib
