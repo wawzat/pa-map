@@ -104,22 +104,26 @@ def get_sensor_ids(list_of_sensor_indexes):
       url = root_url.format(**params)
       response = requests.get(url, headers=header)
       sensor_data = json.loads(response.text)
-      sensor_ids.append((
-         sensor_data['sensor']['name'],
-         sensor_data['sensor']['latitude'],
-         sensor_data['sensor']['longitude'],
-         sensor_data['sensor']['sensor_index'], 
-         sensor_data['sensor']['primary_id_a'], 
-         sensor_data['sensor']['primary_key_a']
-         ))
+      try:
+         sensor_ids.append((
+            sensor_data['sensor']['name'],
+            sensor_data['sensor']['latitude'],
+            sensor_data['sensor']['longitude'],
+            sensor_data['sensor']['sensor_index'], 
+            sensor_data['sensor']['primary_id_a'], 
+            sensor_data['sensor']['primary_key_a']
+            ))
+      except KeyError as e:
+         print(e.message)
+         pass
       print(sensor_index)
       sleep(1.7)
    return sensor_ids
 
 
 def date_range(start_time, end_time, intv):
-   '''Used to break up the overall date range into a list of start and end times to comply the imposed limit of the
-      number of records in each ThingSpeak request.
+   '''Used to break up the overall date range into a list of start and end times to comply with the imposed record limit
+      for each ThingSpeak request.
 
       Args:
          start_time: (datetime)
@@ -249,7 +253,7 @@ def get_ts_data(sensor_ids, start_time, end_time, interval):
             df_s.insert(0, 'Lat', lat)
             df_s.insert(0, 'Lon', lon)
             df = pd.concat([df, df_s])
-         sleep(.3)
+         sleep(.5)
    mapping = {
       'created_at': 'created_at',
       'entry_id': 'entry_id',
