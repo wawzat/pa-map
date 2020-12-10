@@ -2,7 +2,7 @@
 #Enter keys and directory path below and rename file config.py
 
 # PurpleAir Keys - Replace <TEXT> with the key but keep the quotes, i.e., 'EF5C7BBE-BE54-22AE-873E-53320A400313' (note this is not a valid key)
-# Request keys from contact@purpleair.com.
+# Request keys from api@purpleair.com.
 purpleair_read_key = '<READ KEY>'
 purpleair_write_key = '<WRITE KEY>'
 
