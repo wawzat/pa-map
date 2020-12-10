@@ -115,10 +115,10 @@ def get_sensor_ids(list_of_sensor_indexes):
             sensor_data['sensor']['primary_key_a']
             ))
       except KeyError as e:
-         print(e.message)
+         print(e)
          pass
       print(sensor_index)
-      sleep(2.1)
+      sleep(3.1)
    return sensor_ids
 
 
