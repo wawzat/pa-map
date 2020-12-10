@@ -23,12 +23,13 @@ Notes:
    Todo: 
       rename variables consistently with names that are more appropriate to function
       exception handling
+      Status and error logging
       add option to store data in local time vs UTC
       filter apparent bad sensor readings 
       Get both sensors data and exclude based on confidence
 '''
  
- #James S. Lucas 20201206
+ #James S. Lucas 20201209
 
 import requests
 import json
@@ -117,7 +118,7 @@ def get_sensor_ids(list_of_sensor_indexes):
          print(e.message)
          pass
       print(sensor_index)
-      sleep(1.7)
+      sleep(2.1)
    return sensor_ids
 
 
