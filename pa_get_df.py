@@ -51,7 +51,7 @@ def get_sensor_indexes(bbox):
    '''
    root_url = "https://api.purpleair.com/v1/sensors"
    params = {
-      'fields': "name,latitude,longitude",
+      'fields': "name,location_type",
       'nwlng': bbox[0],
       'selat': bbox[1],
       'selng': bbox[2],
@@ -62,11 +62,14 @@ def get_sensor_indexes(bbox):
    try:
       list_of_sensor_indexes = []
       header = {"X-API-Key":config.purpleair_read_key}
+      #response will be a list of lists in the format [[sensor_id, sensor_name, location_type]]
       response = requests.get(url, headers=header)
       if response.status_code == 200:
          sensors_data = json.loads(response.text)
          for sensor_list in sensors_data['data']:
-            list_of_sensor_indexes.append(sensor_list[0])
+            # if sensor_location is outside (0)
+            if sensor_list[2] == 0:
+               list_of_sensor_indexes.append(sensor_list[0])
          print(" ")
          print(len(list_of_sensor_indexes))
          print(" ")
@@ -97,28 +100,37 @@ def get_sensor_ids(list_of_sensor_indexes):
             ThingSpeak primiary id a
             ThingSpeak primary key a
    '''
+   i = 0
+   num_sensors = len(list_of_sensor_indexes)
    sensor_ids = []
    root_url = "https://api.purpleair.com/v1/sensors/{sensor_index}"
    header = {"X-API-Key":config.purpleair_read_key}
    for sensor_index in list_of_sensor_indexes:
+      i += 1
       params = {'sensor_index': sensor_index}
       url = root_url.format(**params)
       response = requests.get(url, headers=header)
-      sensor_data = json.loads(response.text)
-      try:
-         sensor_ids.append((
-            sensor_data['sensor']['name'],
-            sensor_data['sensor']['latitude'],
-            sensor_data['sensor']['longitude'],
-            sensor_data['sensor']['sensor_index'], 
-            sensor_data['sensor']['primary_id_a'], 
-            sensor_data['sensor']['primary_key_a']
-            ))
-      except KeyError as e:
-         print(e)
-         pass
-      print(sensor_index)
-      sleep(3.1)
+      if response.status_code == 200:
+         sensor_data = json.loads(response.text)
+         try:
+            sensor_ids.append((
+               sensor_data['sensor']['name'],
+               sensor_data['sensor']['latitude'],
+               sensor_data['sensor']['longitude'],
+               sensor_data['sensor']['sensor_index'], 
+               sensor_data['sensor']['primary_id_a'], 
+               sensor_data['sensor']['primary_key_a']
+               ))
+         except KeyError as e:
+            print(e)
+            pass
+         print(str(i) + " of " + str(num_sensors) + " : " + str(sensor_index))
+         #sleep(3.1)
+         sleep(0.75)
+      else:
+         print(" ")
+         print("error not 200 response. pausing for 60 seconds.")
+         sleep(60)
    return sensor_ids
 
 
