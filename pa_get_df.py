@@ -170,8 +170,11 @@ def calc_aqi(PM2_5):
    '''
    # Truncate to one decimal place.
    # There shouldn't be any NaN values as they have been filtered out but just in case.
-   if (PM2_5 < 0) or math.isnan(PM2_5):
-      PM2_5 = 0
+   try:
+      if (PM2_5 < 0) or math.isnan(PM2_5):
+         PM2_5 = 0
+   except TypeError as e:
+         PM2_5 = 0
    PM2_5 = int(PM2_5 * 10) / 10.0
    #AQI breakpoints [0,    1,     2,    3    ]
    #                [Ilow, Ihigh, Clow, Chigh]
@@ -279,7 +282,7 @@ def get_ts_data(sensor_ids, start_time, end_time, interval):
       }
    df = df.rename(columns=mapping)
    df['created_at'] = pd.to_datetime(df['created_at'])
-   df = df[df['PM2.5_CF1_ug/m3'].notnull()]
+   #df = df[df['PM2.5_CF1_ug/m3'].notnull()]
 
    # Calculate AQI
    df_AQI = df[['created_at', 'PM2.5_CF1_ug/m3']].copy()
