@@ -130,6 +130,7 @@ def get_sensor_ids(list_of_sensor_indexes):
       else:
          print(" ")
          print("error not 200 response. pausing for 60 seconds.")
+         print(response.reason)
          sleep(60)
    return sensor_ids
 
