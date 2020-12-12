@@ -62,7 +62,8 @@ def get_sensor_indexes(bbox):
    try:
       list_of_sensor_indexes = []
       header = {"X-API-Key":config.purpleair_read_key}
-      #response will be a list of lists in the format [[sensor_id, sensor_name, location_type]]
+      #response will be a list of lists in the format 
+      # [[sensor_id_1, sensor_name_1, location_type], [sensor_id_2, sensor_name_2, location_type]]
       response = requests.get(url, headers=header)
       if response.status_code == 200:
          sensors_data = json.loads(response.text)
@@ -100,13 +101,11 @@ def get_sensor_ids(list_of_sensor_indexes):
             ThingSpeak primiary id a
             ThingSpeak primary key a
    '''
-   i = 0
    num_sensors = len(list_of_sensor_indexes)
    sensor_ids = []
    root_url = "https://api.purpleair.com/v1/sensors/{sensor_index}"
    header = {"X-API-Key":config.purpleair_read_key}
-   for sensor_index in list_of_sensor_indexes:
-      i += 1
+   for idx, sensor_index in enumerate(list_of_sensor_indexes):
       params = {'sensor_index': sensor_index}
       url = root_url.format(**params)
       response = requests.get(url, headers=header)
@@ -124,9 +123,9 @@ def get_sensor_ids(list_of_sensor_indexes):
          except KeyError as e:
             print(e)
             pass
-         print(str(i) + " of " + str(num_sensors) + " : " + str(sensor_index))
+         print(f"{idx+1} of {num_sensors} : {sensor_index}")
          #sleep(3.1)
-         sleep(0.75)
+         sleep(0.15)
       else:
          print(" ")
          print("error not 200 response. pausing for 60 seconds.")
@@ -202,7 +201,7 @@ def calc_aqi(PM2_5):
          aqi_cat = 'beyond_aqi'
       else:
          print(" ")
-         print("PM2_5: " + str(PM2_5))
+         print(f"PM2_5: {PM2_5}")
       Ihigh = pm25_aqi.get(aqi_cat)[1]
       Ilow = pm25_aqi.get(aqi_cat)[0]
       Chigh = pm25_aqi.get(aqi_cat)[3]
@@ -213,7 +212,7 @@ def calc_aqi(PM2_5):
       return Ipm25
    except Exception as e:
       pass
-      print("error in calc_aqi() function: %s") % e
+      print(f"error in calc_aqi() function: {e}")
  
 
 def get_ts_data(sensor_ids, start_time, end_time, interval):
@@ -234,10 +233,8 @@ def get_ts_data(sensor_ids, start_time, end_time, interval):
    if intv < 1:
       intv = 1
    data_range = list(date_range(start_time, end_time, intv)) 
-   i = 0
    num_sensors = len(sensor_ids)
-   for sensor in sensor_ids:
-      i += 1
+   for idx, sensor in enumerate(sensor_ids):
       sensor_name = sensor[0]
       lat = sensor[1]
       lon = sensor[2]
@@ -255,7 +252,7 @@ def get_ts_data(sensor_ids, start_time, end_time, interval):
             'average': interval
             }
          url = root_url.format(**params)
-         print(str(i) + " of " + str(num_sensors) + " " + url)
+         print(f"{idx+1} of {num_sensors} : {url}")
          if df is None:
             df = pd.read_csv(url)
             df.insert(0, 'Sensor', sensor_name)
