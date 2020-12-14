@@ -118,7 +118,9 @@ def get_sensor_ids(list_of_sensor_indexes):
                sensor_data['sensor']['longitude'],
                sensor_data['sensor']['sensor_index'], 
                sensor_data['sensor']['primary_id_a'], 
-               sensor_data['sensor']['primary_key_a']
+               sensor_data['sensor']['primary_key_a'],
+               sensor_data['sensor']['primary_id_b'], 
+               sensor_data['sensor']['primary_key_b']
                ))
          except KeyError as e:
             print(e)
@@ -218,7 +220,7 @@ def calc_aqi(PM2_5):
       print(f"error in calc_aqi() function: {e}")
  
 
-def get_ts_data(sensor_ids, start_time, end_time, interval):
+def get_ts_data(sensor_ids, start_time, end_time, interval, channel):
    '''Gets sensor readings from the ThingSpeak API.
 
       Args:
@@ -242,13 +244,17 @@ def get_ts_data(sensor_ids, start_time, end_time, interval):
       lat = sensor[1]
       lon = sensor[2]
       for t in range(0, intv):
-         root_url = 'https://api.thingspeak.com/channels/{channel}/feeds.csv?api_key={api_key}&start={start}%2000:00:00&end={end}%2023:59:59&average={average}'
-         channel = sensor[4]
-         api_key = sensor[5]
+         root_url = 'https://api.thingspeak.com/channels/{ts_channel}/feeds.csv?api_key={api_key}&start={start}%2000:00:00&end={end}%2023:59:59&average={average}'
+         if channel == 'a':
+            ts_channel = sensor[4]
+            api_key = sensor[5]
+         if channel == 'b':
+            ts_channel = sensor[6]
+            api_key = sensor[7]
          start_time = data_range[t]
          end_time = data_range[t+1]
          params = {
-            'channel': channel,
+            'ts_channel': ts_channel,
             'api_key': api_key,
             'start': start_time,
             'end': end_time,
@@ -296,7 +302,7 @@ def get_ts_data(sensor_ids, start_time, end_time, interval):
    return df
 
 
-def pa_get_df(start_time, end_time, bbox, interval):
+def pa_get_df(start_time, end_time, bbox, interval, channel):
    '''Main entry point. Executes the various functions.
       
       Args:
@@ -310,7 +316,7 @@ def pa_get_df(start_time, end_time, bbox, interval):
    '''
    list_of_sensor_indexes = get_sensor_indexes(bbox)
    sensor_ids = get_sensor_ids(list_of_sensor_indexes)
-   df = get_ts_data(sensor_ids, start_time, end_time, interval)
+   df = get_ts_data(sensor_ids, start_time, end_time, interval, channel)
    return df
 
 
@@ -336,15 +342,16 @@ if __name__ == "__main__":
       parser = argparse.ArgumentParser(
       description='get PurpleAir PA-II sensor data from ThingSpeak.',
       prog='pa_get_df',
-      usage='%(prog)s [-b <bbox>], [-o <output>], [-i <interval>], [-s <start>], [-e <end>]',
+      usage='%(prog)s [-b <bbox>], [-o <output>], [-i <interval>], [-s <start>], [-e <end>], [-c <channel>]',
       formatter_class=argparse.RawDescriptionHelpFormatter,
       )
       g=parser.add_argument_group(title='arguments',
             description='''    -b, --bbox    optional.  bounding box coordinates, format  SE lon lat NW lon lat. omit SE and NW.
-      -o  --output                          optional.  output filename prefix.
+      -f  --filename                        optional.  output filename prefix.
       -i  --interval                        optional.  data average interval. minutes.
       -s  --start                           optional.  start date. format "YYYY-MM-DD HH:MM:SS" include quotes. 
-      -e  --end                             optional.  end date. format "YYYY-MM-DD HH:MM:SS" include quotes.           ''')
+      -e  --end                             optional.  end date. format "YYYY-MM-DD HH:MM:SS" include quotes.
+      -c  --channel                        optional.  channel.              ''')
       g.add_argument('-b', '--bbox',
                      type=float,
                      nargs = 4,
@@ -367,6 +374,12 @@ if __name__ == "__main__":
       g.add_argument('-e', '--enddate', 
                      type=valid_date,
                      help=argparse.SUPPRESS)
+      g.add_argument('-c', '--channel',
+                     type=str,
+                     default = 'a',
+                     choices = ['a', 'b'],
+                     dest='channel',
+                     help=argparse.SUPPRESS)
       args = parser.parse_args()
       return(args)
 
@@ -374,6 +387,6 @@ if __name__ == "__main__":
 
    bbox = args.bbox
    bbox_pa = (str(bbox[0]), str(bbox[1]), str(bbox[2]), str(bbox[3]))
-   df = pa_get_df(args.startdate, args.enddate, bbox_pa, args.interval)
-   data_file_full_path = data_path + os.path.sep + args.filename + "_" + args.startdate.strftime("%Y%m%d") + "_" + args.enddate.strftime("%Y%m%d") + ".csv"
+   df = pa_get_df(args.startdate, args.enddate, bbox_pa, args.interval, args.channel)
+   data_file_full_path = data_path + os.path.sep + args.filename + "_" + args.startdate.strftime("%Y%m%d") + "_" + args.enddate.strftime("%Y%m%d") + "_" + args.channel + ".csv"
    df.to_csv(data_file_full_path, index=False, header=True)
