@@ -1,7 +1,6 @@
 # Visualize PA data on a map
 #  *** WARNING! *** this program deletes files from a temporary images folder. This is not safed off yet. Use at your own risk.
-# You must establish the appropriate paths to folders below.
-# James S. Lucas 20201202
+# James S. Lucas 20201213
 
 from datetime import datetime, timedelta
 import pytz
@@ -118,7 +117,7 @@ if args.data == 'TS':
     bbox_plot = (bbox[0]-.004, bbox[2]+.004, bbox[1]-.004, bbox[3]+.004)
     bbox_mapbox = (bbox[0]-.004, bbox[1]-.004, bbox[2]+.004, bbox[3]+.004)
     bbox_pa = (str(bbox[0]), str(bbox[1]), str(bbox[2]), str(bbox[3]))
-    df = pa_get_df(args.startdate, args.enddate, bbox_pa, args.interval)
+    df = pa_get_df(args.startdate, args.enddate, bbox_pa, args.interval, 'a')
     data_file_full_path = data_path + os.path.sep + args.output + "_" + args.startdate.strftime("%Y%m%d") + "_" + args.enddate.strftime("%Y%m%d") + ".csv"
     df.to_csv(data_file_full_path, index=False, header=True)
 elif args.data == 'CSV':
@@ -140,9 +139,7 @@ df['created_at'] = pd.to_datetime(df['created_at'])
 fig_num = 1
 first_datetime = min(df['created_at'])
 last_datetime = max(df['created_at'])
-#output_pathname = root_path + args.output + "_" + args.startdate.strftime("%Y%m%d") + "_" + args.enddate.strftime("%Y%m%d") + ".csv"
 output_pathname = root_path + args.output + "_" + first_datetime.strftime("%Y%m%d") + "_" + last_datetime.strftime("%Y%m%d") + ".csv"
-#vid_filename = args.output + "_" + args.startdate.strftime("%Y%m%d") + "_" + args.enddate.strftime("%Y%m%d") + ".mp4"
 vid_filename = args.output + "_" + first_datetime.strftime("%Y%m%d") + "_" + last_datetime.strftime("%Y%m%d") + ".mp4"
 vid_full_file_path = root_path + config.video_folder + os.path.sep + vid_filename 
 
