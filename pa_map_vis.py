@@ -117,12 +117,13 @@ if args.data == 'TS':
     bbox_plot = (bbox[0]-.004, bbox[2]+.004, bbox[1]-.004, bbox[3]+.004)
     bbox_mapbox = (bbox[0]-.004, bbox[1]-.004, bbox[2]+.004, bbox[3]+.004)
     bbox_pa = (str(bbox[0]), str(bbox[1]), str(bbox[2]), str(bbox[3]))
-    df = pa_get_df(args.startdate, args.enddate, bbox_pa, args.interval, 'a')
-    data_file_full_path = data_path + os.path.sep + args.output + "_" + args.startdate.strftime("%Y%m%d") + "_" + args.enddate.strftime("%Y%m%d") + ".csv"
+    dfs = pa_get_df(args.startdate, args.enddate, bbox_pa, args.interval, 'a')
+    df = dfs['a']
+    data_file_full_path = data_path + os.path.sep + args.output + "_" + args.startdate.strftime("%Y%m%d") + "_" + args.enddate.strftime("%Y%m%d") + "_a" + ".csv"
     df.to_csv(data_file_full_path, index=False, header=True)
 elif args.data == 'CSV':
     items = os.listdir(data_path)
-    file_list =[name for name in items if name.endswith(".csv")]
+    file_list = [name for name in items if name.endswith("_a.csv")]
     for n, fileName in enumerate(file_list, 1):
         sys.stdout.write("[%d] %s\n\r" % (n, fileName))
     choice = int(input("Select data file[1-%s]: " % n))
@@ -139,7 +140,6 @@ df['created_at'] = pd.to_datetime(df['created_at'])
 fig_num = 1
 first_datetime = min(df['created_at'])
 last_datetime = max(df['created_at'])
-output_pathname = root_path + args.output + "_" + first_datetime.strftime("%Y%m%d") + "_" + last_datetime.strftime("%Y%m%d") + ".csv"
 vid_filename = args.output + "_" + first_datetime.strftime("%Y%m%d") + "_" + last_datetime.strftime("%Y%m%d") + ".mp4"
 vid_full_file_path = root_path + config.video_folder + os.path.sep + vid_filename 
 

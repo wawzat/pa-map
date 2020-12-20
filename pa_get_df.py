@@ -29,7 +29,7 @@ Notes:
       Get both sensors data and exclude based on confidence
 '''
  
- #James S. Lucas 20201209
+ #James S. Lucas 20201220
 
 import requests
 import json
@@ -37,6 +37,7 @@ import config
 import pandas as pd
 from time import sleep
 import math
+from collections import defaultdict
 
 
 def get_sensor_indexes(bbox):
@@ -232,48 +233,65 @@ def get_ts_data(sensor_ids, start_time, end_time, interval, channel):
       Returns:
          (Pandas dataframe)
    '''
-   df = None
+   url_params = defaultdict(dict)
+   df_a = None
+   df_b = None
    delta = end_time - start_time
    intv = int(delta.days / 10)
    if intv < 1:
       intv = 1
    data_range = list(date_range(start_time, end_time, intv)) 
    num_sensors = len(sensor_ids)
+   request_num = 0
    for idx, sensor in enumerate(sensor_ids):
       sensor_name = sensor[0]
       lat = sensor[1]
       lon = sensor[2]
+      root_url = 'https://api.thingspeak.com/channels/{ts_channel}/feeds.csv?api_key={api_key}&start={start}%2000:00:00&end={end}%2023:59:59&average={average}'
       for t in range(0, intv):
-         root_url = 'https://api.thingspeak.com/channels/{ts_channel}/feeds.csv?api_key={api_key}&start={start}%2000:00:00&end={end}%2023:59:59&average={average}'
-         if channel == 'a':
-            ts_channel = sensor[4]
-            api_key = sensor[5]
-         if channel == 'b':
-            ts_channel = sensor[6]
-            api_key = sensor[7]
+         request_num += 1
          start_time = data_range[t]
          end_time = data_range[t+1]
-         params = {
-            'ts_channel': ts_channel,
-            'api_key': api_key,
-            'start': start_time,
-            'end': end_time,
-            'average': interval
-            }
-         url = root_url.format(**params)
-         print(f"{idx+1} of {num_sensors} : {url}")
-         if df is None:
-            df = pd.read_csv(url)
-            df.insert(0, 'Sensor', sensor_name)
-            df.insert(0, 'Lat', lat)
-            df.insert(0, 'Lon', lon)
-         else:
-            df_s = pd.read_csv(url)
-            df_s.insert(0, 'Sensor', sensor_name)
-            df_s.insert(0, 'Lat', lat)
-            df_s.insert(0, 'Lon', lon)
-            df = pd.concat([df, df_s])
-         sleep(.5)
+         if channel == 'a' or channel == 'ab':
+            url_params['a']['ts_channel'] = sensor[4]
+            url_params['a']['api_key'] = sensor[5]
+            url_params['a']['start'] = start_time
+            url_params['a']['end'] = end_time
+            url_params['a']['average'] = interval
+         if channel == 'b' or channel == 'ab':
+            url_params['b']['ts_channel'] = sensor[6]
+            url_params['b']['api_key'] = sensor[7]
+            url_params['b']['start'] = start_time
+            url_params['b']['end'] = end_time
+            url_params['b']['average'] = interval
+         for key, params in url_params.items():
+            url = root_url.format(**params)
+            print(f"{request_num}{key} of {num_sensors * intv} : {url}")
+            if key == 'a':
+               if df_a is None:
+                  df_a = pd.read_csv(url)
+                  df_a.insert(0, 'Sensor', sensor_name)
+                  df_a.insert(0, 'Lat', lat)
+                  df_a.insert(0, 'Lon', lon)
+               elif df_a is not None:
+                  df_a_s = pd.read_csv(url)
+                  df_a_s.insert(0, 'Sensor', sensor_name)
+                  df_a_s.insert(0, 'Lat', lat)
+                  df_a_s.insert(0, 'Lon', lon)
+                  df_a = pd.concat([df_a, df_a_s])
+            if key == 'b':
+               if df_b is None:
+                  df_b = pd.read_csv(url)
+                  df_b.insert(0, 'Sensor', sensor_name)
+                  df_b.insert(0, 'Lat', lat)
+                  df_b.insert(0, 'Lon', lon)
+               elif df_b is not None:
+                  df_b_s = pd.read_csv(url)
+                  df_b_s.insert(0, 'Sensor', sensor_name)
+                  df_b_s.insert(0, 'Lat', lat)
+                  df_b_s.insert(0, 'Lon', lon)
+                  df_b = pd.concat([df_b, df_b_s])
+         sleep(.25)
    mapping = {
       'created_at': 'created_at',
       'entry_id': 'entry_id',
@@ -286,20 +304,43 @@ def get_ts_data(sensor_ids, start_time, end_time, interval, channel):
       'field7': 'Humidity_%',
       'field8': 'PM2.5_ATM_ug/m3'
       }
-   df = df.rename(columns=mapping)
-   df['created_at'] = pd.to_datetime(df['created_at'])
-   #df = df[df['PM2.5_CF1_ug/m3'].notnull()]
+   if df_a is not None:
+      df_a = df_a.rename(columns=mapping)
+      df_a['created_at'] = pd.to_datetime(df_a['created_at'])
+      df_a = df_a[df_a['PM2.5_CF1_ug/m3'].notnull()]
 
-   # Calculate AQI
-   df_AQI = df[['created_at', 'PM2.5_CF1_ug/m3']].copy()
-   df_AQI['created_at'] = pd.to_datetime(df_AQI['created_at'])
-   df_AQI['Ipm25'] = df_AQI.apply(
-         lambda x: calc_aqi(x['PM2.5_CF1_ug/m3']),
-         axis=1
-         )
-   df['Ipm25'] = df_AQI['Ipm25']
-   df = df[df['Ipm25'] <= 800]
-   return df
+      # Calculate AQI
+      df_AQI = df_a[['created_at', 'PM2.5_CF1_ug/m3']].copy()
+      df_AQI['created_at'] = pd.to_datetime(df_AQI['created_at'])
+      df_AQI['Ipm25'] = df_AQI.apply(
+            lambda x: calc_aqi(x['PM2.5_CF1_ug/m3']),
+            axis=1
+            )
+      df_a['Ipm25'] = df_AQI['Ipm25']
+      #Need to improve data quality tests in the future
+      df_a = df_a[df_a['Ipm25'] <= 1200]
+   if df_b is not None:
+      df_b = df_b.rename(columns=mapping)
+      df_b['created_at'] = pd.to_datetime(df_b['created_at'])
+      df_b = df_b[df_b['PM2.5_CF1_ug/m3'].notnull()]
+
+      # Calculate AQI
+      df_AQI = df_b[['created_at', 'PM2.5_CF1_ug/m3']].copy()
+      df_AQI['created_at'] = pd.to_datetime(df_AQI['created_at'])
+      df_AQI['Ipm25'] = df_AQI.apply(
+            lambda x: calc_aqi(x['PM2.5_CF1_ug/m3']),
+            axis=1
+            )
+      df_b['Ipm25'] = df_AQI['Ipm25']
+      #Need to improve data quality tests in the future
+      df_b = df_b[df_b['Ipm25'] <= 1200]
+
+   dfs = {}
+   if df_a is not None:
+      dfs['a'] = df_a
+   if df_b is not None:
+      dfs['b'] = df_b
+   return dfs
 
 
 def pa_get_df(start_time, end_time, bbox, interval, channel):
@@ -316,8 +357,8 @@ def pa_get_df(start_time, end_time, bbox, interval, channel):
    '''
    list_of_sensor_indexes = get_sensor_indexes(bbox)
    sensor_ids = get_sensor_ids(list_of_sensor_indexes)
-   df = get_ts_data(sensor_ids, start_time, end_time, interval, channel)
-   return df
+   dfs = get_ts_data(sensor_ids, start_time, end_time, interval, channel)
+   return dfs
 
 
 if __name__ == "__main__":
@@ -377,7 +418,7 @@ if __name__ == "__main__":
       g.add_argument('-c', '--channel',
                      type=str,
                      default = 'a',
-                     choices = ['a', 'b'],
+                     choices = ['a', 'b', 'ab'],
                      dest='channel',
                      help=argparse.SUPPRESS)
       args = parser.parse_args()
@@ -387,6 +428,7 @@ if __name__ == "__main__":
 
    bbox = args.bbox
    bbox_pa = (str(bbox[0]), str(bbox[1]), str(bbox[2]), str(bbox[3]))
-   df = pa_get_df(args.startdate, args.enddate, bbox_pa, args.interval, args.channel)
-   data_file_full_path = data_path + os.path.sep + args.filename + "_" + args.startdate.strftime("%Y%m%d") + "_" + args.enddate.strftime("%Y%m%d") + "_" + args.channel + ".csv"
-   df.to_csv(data_file_full_path, index=False, header=True)
+   dfs = pa_get_df(args.startdate, args.enddate, bbox_pa, args.interval, args.channel)
+   for key, df in dfs.items():
+      data_file_full_path = data_path + os.path.sep + args.filename + "_" + args.startdate.strftime("%Y%m%d") + "_" + args.enddate.strftime("%Y%m%d") + "_" + key + ".csv"
+      df.to_csv(data_file_full_path, index=False, header=True)
