@@ -12,13 +12,14 @@ Args:
       The average data interval in minutes. minimum is two minutes
 
 Returns:
-   Pandas Data frame of sensor readings for sensors within the bounding box during the provided start and end times.
+   dfs: (dict, Pandas dataframe)
 
 Notes:
    Description of operation:
       PurpleAir API is queried for a list of sensors within the bounding box.
       PurpleAir API is queried a second time for the ThingSpeak keys for each of the sensors
       ThingSpeak API is queried for the sensor historical readings.
+      Returns dictionary of Pandas Data frame(s) of sensor readings for sensors within the bounding box during the provided start and end times.
 
    Todo: 
       rename variables consistently with names that are more appropriate to function
@@ -29,15 +30,19 @@ Notes:
       Get both sensors data and exclude based on confidence
 '''
  
- #James S. Lucas 20201220
+ #James S. Lucas 20201222
 
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 import json
 import config
 import pandas as pd
+import os
 from time import sleep
 import math
 from collections import defaultdict
+import ast
 
 
 def get_sensor_indexes(bbox):
@@ -48,7 +53,7 @@ def get_sensor_indexes(bbox):
             bounding box coordinates in the format lat1 lon1 lat2 lon2 for the SE and NW corners respectively
 
       Returns:
-         (List, str)
+         (List, List, str)
    '''
    root_url = "https://api.purpleair.com/v1/sensors"
    params = {
@@ -84,14 +89,16 @@ def get_sensor_indexes(bbox):
       print(e)
 
 
-def get_sensor_ids(list_of_sensor_indexes):
+def get_sensor_ids(list_of_sensor_indexes, bbox, filename):
    '''Gets list of lists of sensor metadata from the PurpleAir API
 
       Args:
          list_of_sensor_indexes: (list, str)
 
       Returns:
-         list of lists of sensor metadata.
+         list of tuples of sensor metadata in the following format:
+          [(sensor_name_1, lat1, lon1, sensor_index1, ts_id_a_1, ts_key_a_1, ts_id_b_1, ts_key_b_1),
+           (sensor_name_2, lat2, lon2, sensor_index2, ts_id_a_2, ts_key_a_2, ts_id_b_2, ts_key_b_2)]
 
       Notes:
          Metadata includes:
@@ -101,15 +108,25 @@ def get_sensor_ids(list_of_sensor_indexes):
             sensor index
             ThingSpeak primiary id a
             ThingSpeak primary key a
+            ThingSpeak primiary id b
+            ThingSpeak primary key b
    '''
+   metadata_path = config.root_path + os.path.sep + config.metadata_folder 
+   metadata_filename = filename + " " + ' '.join(bbox) + ".txt"
+   metadata_full_path = metadata_path + os.path.sep + metadata_filename
    num_sensors = len(list_of_sensor_indexes)
    sensor_ids = []
+   session = requests.Session()
+   retry = Retry(connect=3, backoff_factor=0.5)
+   adapter = HTTPAdapter(max_retries=retry)
+   session.mount('http://', adapter)
+   session.mount('https://', adapter)
    root_url = "https://api.purpleair.com/v1/sensors/{sensor_index}"
    header = {"X-API-Key":config.purpleair_read_key}
    for idx, sensor_index in enumerate(list_of_sensor_indexes):
       params = {'sensor_index': sensor_index}
       url = root_url.format(**params)
-      response = requests.get(url, headers=header)
+      response = session.get(url, headers=header)
       if response.status_code == 200:
          sensor_data = json.loads(response.text)
          try:
@@ -127,13 +144,14 @@ def get_sensor_ids(list_of_sensor_indexes):
             print(e)
             pass
          print(f"{idx+1} of {num_sensors} : {sensor_index}")
-         #sleep(3.1)
          sleep(0.15)
       else:
          print(" ")
          print("error not 200 response. pausing for 60 seconds.")
          print(response.reason)
          sleep(60)
+   with open(metadata_full_path, 'w') as f:
+      f.write(str(sensor_ids))
    return sensor_ids
 
 
@@ -233,6 +251,7 @@ def get_ts_data(sensor_ids, start_time, end_time, interval, channel):
       Returns:
          (Pandas dataframe)
    '''
+   import sys
    url_params = defaultdict(dict)
    df_a = None
    df_b = None
@@ -243,11 +262,11 @@ def get_ts_data(sensor_ids, start_time, end_time, interval, channel):
    data_range = list(date_range(start_time, end_time, intv)) 
    num_sensors = len(sensor_ids)
    request_num = 0
+   root_url = 'https://api.thingspeak.com/channels/{ts_channel}/feeds.csv?api_key={api_key}&start={start}%2000:00:00&end={end}%2023:59:59&average={average}'
    for idx, sensor in enumerate(sensor_ids):
       sensor_name = sensor[0]
       lat = sensor[1]
       lon = sensor[2]
-      root_url = 'https://api.thingspeak.com/channels/{ts_channel}/feeds.csv?api_key={api_key}&start={start}%2000:00:00&end={end}%2023:59:59&average={average}'
       for t in range(0, intv):
          request_num += 1
          start_time = data_range[t]
@@ -343,7 +362,7 @@ def get_ts_data(sensor_ids, start_time, end_time, interval, channel):
    return dfs
 
 
-def pa_get_df(start_time, end_time, bbox, interval, channel):
+def pa_get_df(start_time, end_time, bbox, interval, channel, metadata, filename="indices"):
    '''Main entry point. Executes the various functions.
       
       Args:
@@ -355,8 +374,21 @@ def pa_get_df(start_time, end_time, bbox, interval, channel):
       Returns:
          (Pandas dataframe)
    '''
-   list_of_sensor_indexes = get_sensor_indexes(bbox)
-   sensor_ids = get_sensor_ids(list_of_sensor_indexes)
+   import sys
+
+   if not metadata:
+      list_of_sensor_indexes = get_sensor_indexes(bbox)
+      sensor_ids = get_sensor_ids(list_of_sensor_indexes, bbox, filename)
+   elif metadata:
+      metadata_path = config.root_path + os.path.sep + config.metadata_folder 
+      items = os.listdir(metadata_path)
+      file_list = [name for name in items if name.endswith(".txt")]
+      for n, fileName in enumerate(file_list, 1):
+         sys.stdout.write("[%d] %s\n\r" % (n, fileName))
+      choice = int(input("Select data file[1-%s]: " % n))
+      metadata_full_path = metadata_path + os.path.sep + file_list[choice-1]
+      with open(metadata_full_path, 'r') as f:
+         sensor_ids = ast.literal_eval(f.read())
    dfs = get_ts_data(sensor_ids, start_time, end_time, interval, channel)
    return dfs
 
@@ -383,7 +415,7 @@ if __name__ == "__main__":
       parser = argparse.ArgumentParser(
       description='get PurpleAir PA-II sensor data from ThingSpeak.',
       prog='pa_get_df',
-      usage='%(prog)s [-b <bbox>], [-o <output>], [-i <interval>], [-s <start>], [-e <end>], [-c <channel>]',
+      usage='%(prog)s [-b <bbox>], [-o <output>], [-i <interval>], [-s <start>], [-e <end>], [-c <channel>], [-md]',
       formatter_class=argparse.RawDescriptionHelpFormatter,
       )
       g=parser.add_argument_group(title='arguments',
@@ -392,7 +424,8 @@ if __name__ == "__main__":
       -i  --interval                        optional.  data average interval. minutes.
       -s  --start                           optional.  start date. format "YYYY-MM-DD HH:MM:SS" include quotes. 
       -e  --end                             optional.  end date. format "YYYY-MM-DD HH:MM:SS" include quotes.
-      -c  --channel                        optional.  channel.              ''')
+      -c  --channel                         optional.  channel.
+          --md                              optional.  use stored sensor metadata        ''')
       g.add_argument('-b', '--bbox',
                      type=float,
                      nargs = 4,
@@ -421,6 +454,9 @@ if __name__ == "__main__":
                      choices = ['a', 'b', 'ab'],
                      dest='channel',
                      help=argparse.SUPPRESS)
+      g.add_argument('--md', action='store_true',
+                     dest='metadata',
+                     help=argparse.SUPPRESS)
       args = parser.parse_args()
       return(args)
 
@@ -428,7 +464,7 @@ if __name__ == "__main__":
 
    bbox = args.bbox
    bbox_pa = (str(bbox[0]), str(bbox[1]), str(bbox[2]), str(bbox[3]))
-   dfs = pa_get_df(args.startdate, args.enddate, bbox_pa, args.interval, args.channel)
+   dfs = pa_get_df(args.startdate, args.enddate, bbox_pa, args.interval, args.channel, args.metadata, args.filename)
    for key, df in dfs.items():
       data_file_full_path = data_path + os.path.sep + args.filename + "_" + args.startdate.strftime("%Y%m%d") + "_" + args.enddate.strftime("%Y%m%d") + "_" + key + ".csv"
       df.to_csv(data_file_full_path, index=False, header=True)
