@@ -64,7 +64,7 @@ def mb2ax(left, bottom, right, top):
 
 
 # bbox = (left, bottom, right, top) in degrees
-def get_map_by_bbox(bbox):
+def get_map_by_bbox(bbox, map):
     # Token from https://www.mapbox.com/api-documentation/maps/#static
     token = config.mapbox_access_token
 
@@ -103,12 +103,13 @@ def get_map_by_bbox(bbox):
         if (LEFT <= left < right <= RIGHT):
             if (BOTTOM <= bottom < top <= TOP):
                 break
-
+    if map == 'd':
+        map_style = "ckhe5u8c101kx19pez36w8lia"  #dark_no_text
+    elif map == 'l':
+        map_style = "ckif7hiyd4cto19mpwjjlaamz"  #monchrome
     # Collect all parameters
     params = {
-        #'style': "dark-v10",
-        #'style': "mapbox://styles/wawzat/ckhe5u8c101kx19pez36w8lia",
-        'style': "ckhe5u8c101kx19pez36w8lia",
+        'style': map_style,
         'lat': lat,
         'lon': lon,
         'token': token,
@@ -142,9 +143,9 @@ def get_map_by_bbox(bbox):
     return i
 
 
-def get_map(map_full_file_path, bbox = [-117.5298-.004, 33.7180-.004, -117.4166+.004, 33.8188+.004]):
+def get_map(map_full_file_path, map, bbox = [-117.5298-.004, 33.7180-.004, -117.4166+.004, 33.8188+.004]):
     #bbox = [-117.5298-.004, 33.7180-.004, -117.4166+.004, 33.8188+.004]
-    map = get_map_by_bbox(bbox)
+    map = get_map_by_bbox(bbox, map)
     map.save(map_full_file_path)
 
     import matplotlib as mpl
@@ -164,12 +165,13 @@ if __name__ == "__main__":
         parser = argparse.ArgumentParser(
         description='get map from Mapbox for provided bounding box.',
         prog='get_map',
-        usage='%(prog)s [-b <bbox>], [-f <filename>]',
+        usage='%(prog)s [-b <bbox>], [-f <filename>], --map <brightnes>',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         )
         g=parser.add_argument_group(title='arguments',
             description='''        -b, --bbox       required.  bounding box coordinates, format  SE lon lat NW lon lat. omit SE and NW.
-        -f  --filename   optional.  output filename prefix.                                          ''')
+        -f  --filename   optional.  output filename prefix. 
+            --map        optional.  map backgound ((l)ight or (d)ark).                                          ''')
         g.add_argument('-b', '--bbox',
                         type=float,
                         nargs = 4,
@@ -181,6 +183,13 @@ if __name__ == "__main__":
                         default = 'map_dark.png',
                         dest='filename',
                         help=argparse.SUPPRESS)
+        g.add_argument('--map',
+                        type=str,
+                        default = 'd',
+                        choices = ['l', 'd'],
+                        dest='map',
+                        help=argparse.SUPPRESS)
+
         args = parser.parse_args()
         return(args)
 
@@ -191,4 +200,4 @@ if __name__ == "__main__":
     map_filename = args.filename + '.png'
     map_full_file_path = root_path + map_filename 
 
-    get_map(map_full_file_path, args.bbox)
+    get_map(map_full_file_path, args.map, args.bbox)

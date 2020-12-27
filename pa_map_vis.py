@@ -1,6 +1,6 @@
 # Visualize PA data on a map
 #  *** WARNING! *** this program deletes files from a temporary images folder. This is not safed off yet. Use at your own risk.
-# James S. Lucas 20201213
+# James S. Lucas 20201226
 
 from datetime import datetime, timedelta
 import pytz
@@ -36,21 +36,24 @@ def get_arguments():
     parser = argparse.ArgumentParser(
     description='generate time-lapse video of PA-II readings on a map.',
     prog='pa_map_plot',
-    usage='%(prog)s [-d <data>], [-b <bbox>], [-r <ramge>] [-v <video>], [-f <frames>], [-l <label>], [-o <output>], [-i <interval>], [-s <start>], [-e <end>]',
+    usage='%(prog)s [-d <data>], [-b <bbox>], [-r <ramge>] [-v <video>], [-f <frames>], [-l <label>], [-o <output>], [-i <interval>], [-s <start>], [-e <end>], [--md], [--nw], [--map]',
     formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     g=parser.add_argument_group(title='arguments',
           description='''    -d, --data    optional.  get data from either csv or ThingSpeak.
     -b  --bbox                            optional.  bounding box coordinates, format  SE lon lat NW lon lat. omit SE and NW.
     -r  --range                           optional.  color range of readings. min max
-    -m  --marker                          optional.  size of sensor icon.
+    -m  --marker                          optional.  size of sensor icon circle.
     -v  --video                           optional.  generate video. 
     -f  --frames                          optional.  frames per second.
     -l  --label                           optional.  label for the video.
     -o  --output                          optional.  output filename prefix.
     -i  --interval                        optional.  data average interval. minutes. used for retriving data and the image frame increment.
     -s  --start                           optional.  start date. format "YYYY-MM-DD HH:MM:SS" include quotes. 
-    -e  --end                             optional.  end date. format "YYYY-MM-DD HH:MM:SS" include quotes.           ''')
+    -e  --end                             optional.  end date. format "YYYY-MM-DD HH:MM:SS" include quotes. 
+        --md                              optional.  use stored sensor metadata.
+        --nw                              optional.  suppress file deletion warning. 
+        --map                             optional.   map backgound ((l)ight or (d)ark).                                ''')
     g.add_argument('-d', '--data',
                     type=str,
                     default = 'TS',
@@ -103,6 +106,19 @@ def get_arguments():
     g.add_argument('-e', '--enddate', 
                     type=valid_date,
                     help=argparse.SUPPRESS)
+    g.add_argument('--md', action='store_true',
+                    dest='metadata',
+                    help=argparse.SUPPRESS)
+    g.add_argument('--nw', action='store_true',
+                    dest='no_warning',
+                    help=argparse.SUPPRESS)
+    g.add_argument('--map',
+                    type=str,
+                    default = 'd',
+                    choices = ['d', 'l'],
+                    dest='map',
+                    help=argparse.SUPPRESS)
+
     args = parser.parse_args()
     return(args)
 
@@ -117,10 +133,14 @@ if args.data == 'TS':
     bbox_plot = (bbox[0]-.004, bbox[2]+.004, bbox[1]-.004, bbox[3]+.004)
     bbox_mapbox = (bbox[0]-.004, bbox[1]-.004, bbox[2]+.004, bbox[3]+.004)
     bbox_pa = (str(bbox[0]), str(bbox[1]), str(bbox[2]), str(bbox[3]))
-    dfs = pa_get_df(args.startdate, args.enddate, bbox_pa, args.interval, 'a')
+    dfs = pa_get_df(args.startdate, args.enddate, bbox_pa, args.interval, 'a',args.metadata, args.output)
     df = dfs['a']
     data_file_full_path = data_path + os.path.sep + args.output + "_" + args.startdate.strftime("%Y%m%d") + "_" + args.enddate.strftime("%Y%m%d") + "_a" + ".csv"
     df.to_csv(data_file_full_path, index=False, header=True)
+    if args.metadata:
+        bbox = (df.Lon.min(), df.Lat.min(), df.Lon.max(), df.Lat.max())
+        bbox_plot = (bbox[0]-.004, bbox[2]+.004, bbox[1]-.004, bbox[3]+.004)
+        bbox_mapbox = (bbox[0]-.004, bbox[1]-.004, bbox[2]+.004, bbox[3]+.004)
 elif args.data == 'CSV':
     items = os.listdir(data_path)
     file_list = [name for name in items if name.endswith("_a.csv")]
@@ -132,7 +152,6 @@ elif args.data == 'CSV':
     bbox = (df.Lon.min(), df.Lat.min(), df.Lon.max(), df.Lat.max())
     bbox_plot = (bbox[0]-.004, bbox[2]+.004, bbox[1]-.004, bbox[3]+.004)
     bbox_mapbox = (bbox[0]-.004, bbox[1]-.004, bbox[2]+.004, bbox[3]+.004)
-    bbox_pa = (str(bbox[0]), str(bbox[1]), str(bbox[2]), str(bbox[3]))
     
 
 df['created_at'] = pd.to_datetime(df['created_at'])
@@ -159,13 +178,13 @@ if args.enddate is not None:
     last_datetime = pytz.utc.localize(args.enddate)
 time_increment = timedelta(minutes = int(args.interval))
 
-get_map(map_full_file_path, bbox_mapbox)
+get_map(map_full_file_path, args.map, bbox_mapbox)
 map_plt = plt.imread(map_full_file_path)
-cleanup_files(images_path)
+cleanup_files(images_path, args.no_warning)
 while start_time <= last_datetime:
     end_time = start_time + time_increment
     df2 = df[(df['created_at'] >= start_time) & (df['created_at'] <= end_time)]
-    fig_num = plot_map(root_path, df2, map_plt, fig_num, start_time, bbox_plot, args.label, args.range, args.marker)
+    fig_num = plot_map(root_path, df2, map_plt, fig_num, start_time, bbox_plot, args.label, args.range, args.marker, args.map)
     start_time = end_time
 if args.video:
     generate_video(images_path, vid_full_file_path, args.frames)
