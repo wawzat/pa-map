@@ -19,3 +19,4 @@ root_path = r'd:\Users\wawzat\OneDrive\Documents\House\PurpleAir\pa_map_plot' #M
 video_folder = 'videos'
 images_folder = 'images'
 data_folder = 'Data'
+metadata_folder = 'metadata'
