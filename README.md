@@ -33,9 +33,10 @@ Some of the modules may also be used independently as modules in other programs 
 5. Regions with a large number of sensors may take several hours to complete collecting the data.
 
 ## Required Non-Standard Python Libraries
-- Pillow (PIL)
-- pandas
-- numpy (should install automatically with Pandas)
-- matplotlib
 - colorcet
+- matplotlib
+- numpy (should install automatically with Pandas)
 - opencv-python (cv2)
+- pandas
+- Pillow (PIL)
+- requests
