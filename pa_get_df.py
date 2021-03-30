@@ -310,7 +310,7 @@ def get_ts_data(sensor_ids, start_time, end_time, interval, channel):
                   df_b_s.insert(0, 'Lat', lat)
                   df_b_s.insert(0, 'Lon', lon)
                   df_b = pd.concat([df_b, df_b_s])
-         sleep(.25)
+         sleep(.05)
    mapping = {
       'created_at': 'created_at',
       'entry_id': 'entry_id',
@@ -326,13 +326,13 @@ def get_ts_data(sensor_ids, start_time, end_time, interval, channel):
    if df_a is not None:
       df_a = df_a.rename(columns=mapping)
       df_a['created_at'] = pd.to_datetime(df_a['created_at'])
-      df_a = df_a[df_a['PM2.5_CF1_ug/m3'].notnull()]
+      df_a = df_a[df_a['PM2.5_ATM_ug/m3'].notnull()]
 
       # Calculate AQI
-      df_AQI = df_a[['created_at', 'PM2.5_CF1_ug/m3']].copy()
+      df_AQI = df_a[['created_at', 'PM2.5_ATM_ug/m3']].copy()
       df_AQI['created_at'] = pd.to_datetime(df_AQI['created_at'])
       df_AQI['Ipm25'] = df_AQI.apply(
-            lambda x: calc_aqi(x['PM2.5_CF1_ug/m3']),
+            lambda x: calc_aqi(x['PM2.5_ATM_ug/m3']),
             axis=1
             )
       df_a['Ipm25'] = df_AQI['Ipm25']
@@ -341,13 +341,13 @@ def get_ts_data(sensor_ids, start_time, end_time, interval, channel):
    if df_b is not None:
       df_b = df_b.rename(columns=mapping)
       df_b['created_at'] = pd.to_datetime(df_b['created_at'])
-      df_b = df_b[df_b['PM2.5_CF1_ug/m3'].notnull()]
+      df_b = df_b[df_b['PM2.5_ATM_ug/m3'].notnull()]
 
       # Calculate AQI
-      df_AQI = df_b[['created_at', 'PM2.5_CF1_ug/m3']].copy()
+      df_AQI = df_b[['created_at', 'PM2.5_ATM_ug/m3']].copy()
       df_AQI['created_at'] = pd.to_datetime(df_AQI['created_at'])
       df_AQI['Ipm25'] = df_AQI.apply(
-            lambda x: calc_aqi(x['PM2.5_CF1_ug/m3']),
+            lambda x: calc_aqi(x['PM2.5_ATM_ug/m3']),
             axis=1
             )
       df_b['Ipm25'] = df_AQI['Ipm25']
