@@ -53,7 +53,7 @@ def get_arguments():
     -e  --end                             optional.  end date. format "YYYY-MM-DD HH:MM:SS" include quotes. 
         --md                              optional.  use stored sensor metadata.
         --nw                              optional.  suppress file deletion warning. 
-        --map                             optional.   map backgound ((l)ight or (d)ark).                                ''')
+        --map                             optional.  map backgound ((l)ight or (d)ark).                                ''')
     g.add_argument('-d', '--data',
                     type=str,
                     default = 'TS',
