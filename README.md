@@ -1,5 +1,6 @@
 # pa-map
- 
+![](./images/vid.png)
+
 ## Overview
 This set of modules when used together gets PurpleAir PA-II sensor data for sensors located within a bounding box for a given date range, plots the data on a map and generates a timelapse video of the readings.
 
