@@ -106,7 +106,9 @@ def get_map_by_bbox(bbox, map):
     if map == 'd':
         map_style = "ckhe5u8c101kx19pez36w8lia"  #dark_no_text
     elif map == 'l':
-        map_style = "ckif7hiyd4cto19mpwjjlaamz"  #monchrome
+        map_style = "ckn86bkmc1yw517r2s5wsotf1"  #monchrome
+    elif map == 's':
+        map_style = "ckn86fqs904iu18pfaalomm1y"  #super-lite
     # Collect all parameters
     params = {
         'style': map_style,
@@ -171,7 +173,7 @@ if __name__ == "__main__":
         g=parser.add_argument_group(title='arguments',
             description='''        -b, --bbox       required.  bounding box coordinates, format  SE lon lat NW lon lat. omit SE and NW.
         -f  --filename   optional.  output filename prefix. 
-            --map        optional.  map backgound ((l)ight or (d)ark).                                          ''')
+            --map        optional.  map backgound ((l)ight, (d)ark) or (s)uper-lite.                                          ''')
         g.add_argument('-b', '--bbox',
                         type=float,
                         nargs = 4,
@@ -186,7 +188,7 @@ if __name__ == "__main__":
         g.add_argument('--map',
                         type=str,
                         default = 'd',
-                        choices = ['l', 'd'],
+                        choices = ['l', 'd', 's'],
                         dest='map',
                         help=argparse.SUPPRESS)
 
