@@ -106,7 +106,9 @@ def get_map_by_bbox(bbox, map):
     if map == 'd':
         map_style = "ckhe5u8c101kx19pez36w8lia"  #dark_no_text
     elif map == 'l':
-        map_style = "ckn86bkmc1yw517r2s5wsotf1"  #monchrome
+        map_style = "ckrjgmpxi1afj18pdlm6ra4ks"  #monchrome
+    elif map == 'lt':
+        map_style = "ckn86bkmc1yw517r2s5wsotf1"  #monchrome (text)
     elif map == 's':
         map_style = "ckn86fqs904iu18pfaalomm1y"  #super-lite
     # Collect all parameters

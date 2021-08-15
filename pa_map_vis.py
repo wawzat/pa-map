@@ -115,7 +115,7 @@ def get_arguments():
     g.add_argument('--map',
                     type=str,
                     default = 'd',
-                    choices = ['d', 'l'],
+                    choices = ['d', 'l', 'lt', 's'],
                     dest='map',
                     help=argparse.SUPPRESS)
 
@@ -184,6 +184,7 @@ cleanup_files(images_path, args.no_warning)
 while start_time <= last_datetime:
     end_time = start_time + time_increment
     df2 = df[(df['created_at'] >= start_time) & (df['created_at'] <= end_time)]
+    #print(df2)
     fig_num = plot_map(root_path, df2, map_plt, fig_num, start_time, bbox_plot, args.label, args.range, args.marker, args.map)
     start_time = end_time
 if args.video:

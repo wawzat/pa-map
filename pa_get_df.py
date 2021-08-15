@@ -43,6 +43,7 @@ from time import sleep
 import math
 from collections import defaultdict
 import ast
+import io
 
 
 def get_sensor_indexes(bbox):
@@ -252,11 +253,17 @@ def get_ts_data(sensor_ids, start_time, end_time, interval, channel):
          (Pandas dataframe)
    '''
    import sys
+   session = requests.Session()
+   retry = Retry(connect=3, backoff_factor=0.5)
+   adapter = HTTPAdapter(max_retries=retry)
+   session.mount('http://', adapter)
+   session.mount('https://', adapter)
    url_params = defaultdict(dict)
    df_a = None
    df_b = None
    delta = end_time - start_time
-   intv = int(delta.days / 10)
+   rows = delta.days * 24 * 60 / int(interval)
+   intv = int(math.ceil(rows / 7800))
    if intv < 1:
       intv = 1
    data_range = list(date_range(start_time, end_time, intv)) 
@@ -288,29 +295,36 @@ def get_ts_data(sensor_ids, start_time, end_time, interval, channel):
             print(f"{request_num}{key} of {num_sensors * intv} : {url}")
             if key == 'a':
                if df_a is None:
-                  df_a = pd.read_csv(url)
+                  response = session.get(url)
+                  url_data = response.content
+                  df_a = pd.read_csv(io.StringIO(url_data.decode('utf-8')))
                   df_a.insert(0, 'Sensor', sensor_name)
                   df_a.insert(0, 'Lat', lat)
                   df_a.insert(0, 'Lon', lon)
                elif df_a is not None:
-                  df_a_s = pd.read_csv(url)
+                  response = session.get(url)
+                  url_data = response.content
+                  df_a_s = pd.read_csv(io.StringIO(url_data.decode('utf-8')))
                   df_a_s.insert(0, 'Sensor', sensor_name)
                   df_a_s.insert(0, 'Lat', lat)
                   df_a_s.insert(0, 'Lon', lon)
                   df_a = pd.concat([df_a, df_a_s])
             if key == 'b':
                if df_b is None:
-                  df_b = pd.read_csv(url)
+                  response = session.get(url)
+                  url_data = response.content
+                  df_b = pd.read_csv(io.StringIO(url_data.decode('utf-8')))
                   df_b.insert(0, 'Sensor', sensor_name)
                   df_b.insert(0, 'Lat', lat)
                   df_b.insert(0, 'Lon', lon)
                elif df_b is not None:
-                  df_b_s = pd.read_csv(url)
+                  response = session.get(url)
+                  url_data = response.content
+                  df_b_s = pd.read_csv(io.StringIO(url_data.decode('utf-8')))
                   df_b_s.insert(0, 'Sensor', sensor_name)
                   df_b_s.insert(0, 'Lat', lat)
                   df_b_s.insert(0, 'Lon', lon)
                   df_b = pd.concat([df_b, df_b_s])
-         sleep(.05)
    mapping = {
       'created_at': 'created_at',
       'entry_id': 'entry_id',
@@ -422,8 +436,8 @@ if __name__ == "__main__":
             description='''    -b, --bbox    optional.  bounding box coordinates, format  SE lon lat NW lon lat. omit SE and NW.
       -f  --filename                        optional.  output filename prefix.
       -i  --interval                        optional.  data average interval. minutes.
-      -s  --start                           optional.  start date. format "YYYY-MM-DD HH:MM:SS" include quotes. 
-      -e  --end                             optional.  end date. format "YYYY-MM-DD HH:MM:SS" include quotes.
+      -s  --startdate                       optional.  start date. format "YYYY-MM-DD HH:MM:SS" include quotes. 
+      -e  --enddate                         optional.  end date. format "YYYY-MM-DD HH:MM:SS" include quotes.
       -c  --channel                         optional.  channel.
           --md                              optional.  use stored sensor metadata        ''')
       g.add_argument('-b', '--bbox',
