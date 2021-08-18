@@ -1,0 +1,6 @@
+pytz
+pandas
+matplotlib
+requests
+opencv-python
+colorcet
