@@ -14,12 +14,15 @@ Some of the modules may also be used independently as modules in other programs 
 5. pa_map_vid.py: create h.264 encoded mp4 video from image frames.
 
 ## Installation and Use
-1. Request a key for the PurpleAir REST API from api@purpleair.com.
-2. Register an account with https://www.mapbox.com.
-3. Create a root folder path and subfolders for images, data and video.
-4. Rename the config_template.py file to config.py.
-5. Edit config.py with the PurpleAir keys, Mapbox tokens and file directory paths listed in the config.py template.
-6. Run python pa_map_vis.py -h for help on the command line arguments.
+1. Create a folder on your computer and clone the repo into it ( git clone https://github.com/wawzat/pa-map.git )  
+2. It is recommended to create a virtual environment with virtualenv (or conda if you are using Anaconda or miniconda)  
+3. Run python -m pip install -r requirements.txt to install the required Python packages.  
+4. Request a key for the PurpleAir REST API from api@purpleair.com.
+5. Register an account with https://www.mapbox.com.
+6. Create a root folder path and subfolders for images, data and video.
+7. Rename the config_template.py file to config.py.
+8. Edit config.py with the PurpleAir keys, Mapbox tokens and file directory paths listed in the config.py template.
+9. Run python pa_map_vis.py -h for help with the command line arguments.
 
 ## Notes:
 1. Data are obtained in three stages.
@@ -39,5 +42,5 @@ Some of the modules may also be used independently as modules in other programs 
 - numpy (should install automatically with Pandas)
 - opencv-python (cv2)
 - pandas
-- Pillow (PIL)
+- Pillow (PIL) (should install automatically with matplotlib)
 - requests 
