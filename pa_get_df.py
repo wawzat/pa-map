@@ -145,7 +145,7 @@ def get_sensor_ids(list_of_sensor_indexes, bbox, filename):
             print(e)
             pass
          print(f"{idx+1} of {num_sensors} : {sensor_index}")
-         sleep(0.15)
+         sleep(0.05)
       else:
          print(" ")
          print("error not 200 response. pausing for 60 seconds.")
