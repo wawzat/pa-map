@@ -17,11 +17,11 @@ Some of the modules may also be used independently as modules in other programs 
 1. Create a folder on your computer and clone the repo into it ( git clone https://github.com/wawzat/pa-map.git )  
 2. It is recommended to create a virtual environment with virtualenv (or conda if you are using Anaconda or miniconda)  
 3. Run python -m pip install -r requirements.txt to install the required Python packages.  
-4. Request a key for the PurpleAir REST API from api@purpleair.com.
-5. Register an account with https://www.mapbox.com.
-6. Create a root folder path and subfolders for images, data and video.
+4. Request a key for the PurpleAir REST API from api@purpleair.com.  
+5. Register an account with https://www.mapbox.com. You will need Public and Secret Access tokens which will be obtained from your account page.   
+6. Create a root folder path and subfolders for images, data and video. Name the folders consistently with the names used in config.py.  
 7. Rename the config_template.py file to config.py.
-8. Edit config.py with the PurpleAir keys, Mapbox tokens and file directory paths listed in the config.py template.
+8. Edit config.py with the PurpleAir keys, Mapbox tokens and file directory paths in the appropriate sections of the config.py template.
 9. Run python pa_map_vis.py -h for help with the command line arguments.
 
 ## Notes:
