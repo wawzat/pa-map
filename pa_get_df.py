@@ -46,7 +46,7 @@ import ast
 import io
 
 
-def get_sensor_indexes(bbox):
+def get_sensor_indexes(bbox, filename):
    '''Gets list of sensor indexes (aka ID's) from the PurpleAir API for sensors located within a bounding box.
 
       Args:
@@ -56,9 +56,12 @@ def get_sensor_indexes(bbox):
       Returns:
          (List, List, str)
    '''
+   metadata_path = config.root_path + os.path.sep + config.metadata_folder 
+   metadata_filename = filename + " " + ' '.join(bbox) + ".txt"
+   metadata_full_path = metadata_path + os.path.sep + metadata_filename
    root_url = "https://api.purpleair.com/v1/sensors"
    params = {
-      'fields': "name,location_type",
+      'fields': "name,latitude,longitude,primary_id_a,primary_key_a,primary_id_b,primary_key_b,location_type",
       'nwlng': bbox[0],
       'selat': bbox[1],
       'selng': bbox[2],
@@ -67,7 +70,7 @@ def get_sensor_indexes(bbox):
    url_template = root_url + "?fields={fields}&nwlng={nwlng}&nwlat={nwlat}&selng={selng}&selat={selat}"
    url = url_template.format(**params)
    try:
-      list_of_sensor_indexes = []
+      sensor_ids = []
       header = {"X-API-Key":config.purpleair_read_key}
       #response will be a list of lists in the format 
       # [[sensor_id_1, sensor_name_1, location_type], [sensor_id_2, sensor_name_2, location_type]]
@@ -76,84 +79,20 @@ def get_sensor_indexes(bbox):
          sensors_data = json.loads(response.text)
          for sensor_list in sensors_data['data']:
             # if sensor_location is outside (0)
-            if sensor_list[2] == 0:
-               list_of_sensor_indexes.append(sensor_list[0])
+            if sensor_list[8] == 0:
+               sensor_ids.append(sensor_list)
          print(" ")
-         print(len(list_of_sensor_indexes))
+         print(len(sensor_ids))
          print(" ")
-         print (list_of_sensor_indexes)
-         print(" ")
-         return list_of_sensor_indexes
+         #print(sensor_ids)
+         #print(" ")
+         with open(metadata_full_path, 'w') as f:
+            f.write(str(sensor_ids))
+         return sensor_ids
       else:
          print("error no 200 response.")
    except Exception as e:
       print(e)
-
-
-def get_sensor_ids(list_of_sensor_indexes, bbox, filename):
-   '''Gets list of lists of sensor metadata from the PurpleAir API
-
-      Args:
-         list_of_sensor_indexes: (list, str)
-
-      Returns:
-         list of tuples of sensor metadata in the following format:
-          [(sensor_name_1, lat1, lon1, sensor_index1, ts_id_a_1, ts_key_a_1, ts_id_b_1, ts_key_b_1),
-           (sensor_name_2, lat2, lon2, sensor_index2, ts_id_a_2, ts_key_a_2, ts_id_b_2, ts_key_b_2)]
-
-      Notes:
-         Metadata includes:
-            sensor name
-            latitude
-            longitude
-            sensor index
-            ThingSpeak primiary id a
-            ThingSpeak primary key a
-            ThingSpeak primiary id b
-            ThingSpeak primary key b
-   '''
-   metadata_path = config.root_path + os.path.sep + config.metadata_folder 
-   metadata_filename = filename + " " + ' '.join(bbox) + ".txt"
-   metadata_full_path = metadata_path + os.path.sep + metadata_filename
-   num_sensors = len(list_of_sensor_indexes)
-   sensor_ids = []
-   session = requests.Session()
-   retry = Retry(connect=3, backoff_factor=0.5)
-   adapter = HTTPAdapter(max_retries=retry)
-   session.mount('http://', adapter)
-   session.mount('https://', adapter)
-   root_url = "https://api.purpleair.com/v1/sensors/{sensor_index}"
-   header = {"X-API-Key":config.purpleair_read_key}
-   for idx, sensor_index in enumerate(list_of_sensor_indexes):
-      params = {'sensor_index': sensor_index}
-      url = root_url.format(**params)
-      response = session.get(url, headers=header)
-      if response.status_code == 200:
-         sensor_data = json.loads(response.text)
-         try:
-            sensor_ids.append((
-               sensor_data['sensor']['name'],
-               sensor_data['sensor']['latitude'],
-               sensor_data['sensor']['longitude'],
-               sensor_data['sensor']['sensor_index'], 
-               sensor_data['sensor']['primary_id_a'], 
-               sensor_data['sensor']['primary_key_a'],
-               sensor_data['sensor']['primary_id_b'], 
-               sensor_data['sensor']['primary_key_b']
-               ))
-         except KeyError as e:
-            print(e)
-            pass
-         print(f"{idx+1} of {num_sensors} : {sensor_index}")
-         sleep(0.05)
-      else:
-         print(" ")
-         print("error not 200 response. pausing for 60 seconds.")
-         print(response.reason)
-         sleep(60)
-   with open(metadata_full_path, 'w') as f:
-      f.write(str(sensor_ids))
-   return sensor_ids
 
 
 def date_range(start_time, end_time, intv):
@@ -271,9 +210,9 @@ def get_ts_data(sensor_ids, start_time, end_time, interval, channel):
    request_num = 0
    root_url = 'https://api.thingspeak.com/channels/{ts_channel}/feeds.csv?api_key={api_key}&start={start}%2000:00:00&end={end}%2023:59:59&average={average}'
    for idx, sensor in enumerate(sensor_ids):
-      sensor_name = sensor[0]
-      lat = sensor[1]
-      lon = sensor[2]
+      sensor_name = sensor[1]
+      lat = sensor[2]
+      lon = sensor[3]
       for t in range(0, intv):
          request_num += 1
          start_time = data_range[t]
@@ -391,8 +330,7 @@ def pa_get_df(start_time, end_time, bbox, interval, channel, metadata, filename=
    import sys
 
    if not metadata:
-      list_of_sensor_indexes = get_sensor_indexes(bbox)
-      sensor_ids = get_sensor_ids(list_of_sensor_indexes, bbox, filename)
+      sensor_ids = get_sensor_indexes(bbox, filename)
    elif metadata:
       metadata_path = config.root_path + os.path.sep + config.metadata_folder 
       items = os.listdir(metadata_path)
