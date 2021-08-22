@@ -25,10 +25,9 @@ Some of the modules may also be used independently as modules in other programs 
 9. Run python pa_map_vis.py -h for help with the command line arguments.
 
 ## Notes:
-1. Data are obtained in three stages.
-    1. A sensor request is sent to the PurpleAir API and a list of the sensors installed within the provied bounding box is retrieved.
-    2. The list of sensors is iterated over and metadata is retrieved from the PurpleAir API for each sensor.
-    3. The list of sensors is iterated over again and historical data is retrived from the ThingSpeak API for each sensor.
+1. Data are obtained in two stages.
+    1. A sensor request is sent to the PurpleAir API and a list of the metadata for each sensor installed within the provied bounding box is retrieved.
+    3. The list of sensor metadata is iterated over and historical data is retrived from the ThingSpeak API for each sensor.
 2. There are two data retrieval modes that may be selected with the -d argument. 
     1. -d TS obtains historical data from ThinkSpeak. Historical data are saved in the Data folder as csv files.
     2. -d CSV provides a list the of csv files that exist in the Data folder to choose from. The intent here is if you want to adjust to a shorter date range, or modify some of the plotting/video parameters you can recreate the time lapse without re-downloading the historical data.
